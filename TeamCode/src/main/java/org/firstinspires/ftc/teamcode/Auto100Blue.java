@@ -84,7 +84,7 @@ public class Auto100Blue extends LinearOpMode {
     static final double     P_DRIVE_COEFF_2         = 0.03;
 
     // Coeff for doing range sensor driving -- 5 degrees per CM off
-    static final double     P_DRIVE_COEFF_3         = 5.0;
+    static final double     P_DRIVE_COEFF_3         = 1.5;
     static final double     RANGE_THRESHOLD         = 1.0;  // OK at +/- 1cm
 
     // White line finder thresholds
@@ -435,6 +435,7 @@ public class Auto100Blue extends LinearOpMode {
                             // We need to course correct to right distance from wall
                             // Have to adjust sign based on heading forward or backward
                             curHeading = heading - Math.signum(distance) * errorRange * P_DRIVE_COEFF_3;
+                            DbgLog.msg("DM10337 - Range adjust -- range:" + errorRange + "  heading: " + curHeading);
                         } else {
                             // We are in the right range zone so just use the desired heading w/ no adjustment
                             curHeading = heading;
@@ -442,7 +443,7 @@ public class Auto100Blue extends LinearOpMode {
                     }
 
                     // adjust relative speed based on heading
-                    double error = getError(heading);
+                    double error = getError(curHeading);
                     double steer = getSteer(error,
                             (aggressive?P_DRIVE_COEFF_1:P_DRIVE_COEFF_2));
 
