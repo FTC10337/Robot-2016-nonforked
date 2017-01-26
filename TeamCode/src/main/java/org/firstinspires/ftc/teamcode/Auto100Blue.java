@@ -137,7 +137,10 @@ public class Auto100Blue extends LinearOpMode {
 
         DbgLog.msg("DM10337- Finished Init");
         // Wait for the game to start (driver presses PLAY)
-        waitForStart();
+        //waitForStart();
+        while (!isStarted()) {
+            idle();
+        }
 
         DbgLog.msg("DM10337- Auto Pressed Start");
         // Step through each leg of the path,

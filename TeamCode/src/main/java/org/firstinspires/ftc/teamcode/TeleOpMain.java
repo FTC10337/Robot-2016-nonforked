@@ -115,7 +115,6 @@ public class TeleOpMain extends OpMode{
 
         DbgLog.msg("DM10337 -- Finished robot.init");
 
-        updateTelemetry(telemetry);
     }
 
     /*
@@ -123,6 +122,7 @@ public class TeleOpMain extends OpMode{
      */
     @Override
     public void init_loop() {
+
     }
 
     /*
