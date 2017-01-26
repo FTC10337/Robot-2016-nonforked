@@ -37,6 +37,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.ftccommon.DbgLog;
 import com.qualcomm.hardware.adafruit.BNO055IMU;
 import com.qualcomm.hardware.adafruit.JustLoggingAccelerationIntegrator;
+import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -86,6 +87,9 @@ public class HardwareDM
 
     /* lift limit switch - touch sensor */
     public TouchSensor liftLimit = null;
+
+    // Ultrasonic range sensor
+    public ModernRoboticsI2cRangeSensor rangeSensor;
 
     // Adafruit IMU gyro & motion sensor object
     BNO055IMU adaGyro;
@@ -182,6 +186,9 @@ public class HardwareDM
 
         // Define touch sensor
         liftLimit = hwMap.touchSensor.get("ts");
+
+        // Define range sensor
+        rangeSensor = hwMap.get(ModernRoboticsI2cRangeSensor.class, "range");
 
         DbgLog.msg("DM10337 -- Finished mapping all hardware.");
 
