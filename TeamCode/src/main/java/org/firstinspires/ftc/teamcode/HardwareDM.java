@@ -326,7 +326,7 @@ public class HardwareDM
      */
     public void setDriveRearZeroPower(DcMotor.ZeroPowerBehavior behavior) {
         lrDrive.setZeroPowerBehavior(behavior);
-        lfDrive.setZeroPowerBehavior(behavior);
+        rrDrive.setZeroPowerBehavior(behavior);
     }
 
     /**

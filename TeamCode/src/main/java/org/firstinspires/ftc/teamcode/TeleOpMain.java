@@ -122,7 +122,6 @@ public class TeleOpMain extends OpMode{
      */
     @Override
     public void init_loop() {
-
     }
 
     /*
