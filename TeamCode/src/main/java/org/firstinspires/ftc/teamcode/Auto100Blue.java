@@ -45,6 +45,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 
@@ -81,6 +82,10 @@ public class Auto100Blue extends LinearOpMode {
     static final double     P_TURN_COEFF            = 0.010;   // Larger is more responsive, but also less accurate
     static final double     P_DRIVE_COEFF_1         = 0.05;  // Larger is more responsive, but also less accurate
     static final double     P_DRIVE_COEFF_2         = 0.03;
+
+    // Coeff for doing range sensor driving -- 5 degrees per CM off
+    static final double     P_DRIVE_COEFF_3         = 1.5;
+    static final double     RANGE_THRESHOLD         = 1.0;  // OK at +/- 1cm
 
     // White line finder thresholds
     static final double     WHITE_THRESHOLD         = 2.0;      // Line finder
@@ -138,6 +143,7 @@ public class Auto100Blue extends LinearOpMode {
         DbgLog.msg("DM10337- Finished Init");
         // Wait for the game to start (driver presses PLAY)
         //waitForStart();
+        // Change off of waitForStart() as it appears to be causing delay at start
         while (!isStarted()) {
             idle();
         }
@@ -216,10 +222,10 @@ public class Auto100Blue extends LinearOpMode {
 
         }
 
-
         // Drive to the 2nd beacon.  Tweaked Red heading to correct alignment errors.
+        // Use rangefinder correction to get us to 10cm from all
         encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?43.0:-44.0 - distCorrection, 4.0,
-                true, amIBlue()?0.0:178.0, false);
+                true, amIBlue()?0.0:180.0, false, true, 10.0);
 
         // Find the 2nd white line
         findLine(amIBlue()?0.2:-0.2, 3.0);
@@ -278,6 +284,46 @@ public class Auto100Blue extends LinearOpMode {
      *
      */
 
+
+    /**
+     * Abbreviated call to encoderDrive w/o range aggressive turning or finding adjustments
+     *
+     * @param speed
+     * @param distance
+     * @param timeout
+     * @param useGyro
+     * @param heading
+     * @throws InterruptedException
+     */
+    public void encoderDrive(double speed,
+                             double distance,
+                             double timeout,
+                             boolean useGyro,
+                             double heading) throws InterruptedException {
+        encoderDrive(speed, distance, timeout, useGyro, heading, false, false, 0.0);
+    }
+
+
+    /**
+     * Abbreviated call to encoderDrive w/o range finding adjustments
+     *
+     * @param speed
+     * @param distance
+     * @param timeout
+     * @param useGyro
+     * @param heading
+     * @param aggressive
+     * @throws InterruptedException
+     */
+    public void encoderDrive(double speed,
+                             double distance,
+                             double timeout,
+                             boolean useGyro,
+                             double heading,
+                             boolean aggressive) throws InterruptedException {
+        encoderDrive(speed, distance, timeout, useGyro, heading, aggressive, false, 0.0);
+    }
+
     /**
      *
      * Method to perfmorm a relative move, based on encoder counts.
@@ -299,13 +345,18 @@ public class Auto100Blue extends LinearOpMode {
                              double timeout,
                              boolean useGyro,
                              double heading,
-                             boolean aggressive) throws InterruptedException {
+                             boolean aggressive,
+                             boolean userange,
+                             double maintainRange) throws InterruptedException {
 
         // Calculated encoder targets
         int newLFTarget;
         int newRFTarget;
         int newLRTarget;
         int newRRTarget;
+
+        // The potentially adjusted current target heading
+        double curHeading = heading;
 
         // Speed ramp on start of move to avoid wheel slip
         final double MINSPEED = 0.30;           // Start at this power
@@ -374,8 +425,25 @@ public class Auto100Blue extends LinearOpMode {
 
                 // Doing gyro heading correction?
                 if (useGyro){
+
+                    // Get the difference in distance from wall to desired distance
+                    double errorRange = robot.rangeSensor.getDistance(DistanceUnit.CM) -
+                            maintainRange;
+
+                    if (userange) {
+                        if (Math.abs(errorRange) >= RANGE_THRESHOLD) {
+                            // We need to course correct to right distance from wall
+                            // Have to adjust sign based on heading forward or backward
+                            curHeading = heading - Math.signum(distance) * errorRange * P_DRIVE_COEFF_3;
+                            DbgLog.msg("DM10337 - Range adjust -- range:" + errorRange + "  heading: " + curHeading);
+                        } else {
+                            // We are in the right range zone so just use the desired heading w/ no adjustment
+                            curHeading = heading;
+                        }
+                    }
+
                     // adjust relative speed based on heading
-                    double error = getError(heading);
+                    double error = getError(curHeading);
                     double steer = getSteer(error,
                             (aggressive?P_DRIVE_COEFF_1:P_DRIVE_COEFF_2));
 
