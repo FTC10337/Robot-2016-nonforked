@@ -115,8 +115,6 @@ public class TeleOpMain extends OpMode{
 
         DbgLog.msg("DM10337 -- Finished robot.init");
 
-        // Telemetry update not needed as nothing has been sent yet
-        //updateTelemetry(telemetry);
     }
 
     /*
@@ -124,6 +122,7 @@ public class TeleOpMain extends OpMode{
      */
     @Override
     public void init_loop() {
+
     }
 
     /*
