@@ -150,6 +150,19 @@ public class HardwareDM
     public HardwareDM() {
     }
 
+
+    /**
+     * Abbreviated call to init w/o gyro functionality
+     *
+     * @param ahwMap
+     */
+    public void init(HardwareMap ahwMap) {
+        init(ahwMap, true);
+        // Assume using the gyro unless OpMode explicitly doesn't need it
+        // TeleOp is the likely non-user
+    }
+
+
     /**
      *
      * @param ahwMap    HardwareMap to use to find all of our hardware
@@ -157,12 +170,37 @@ public class HardwareDM
      * Does all initialization for all of our robot hardware to default configurations.
      *
      */
-    public void init(HardwareMap ahwMap) {
+    public void init(HardwareMap ahwMap, boolean useGyroRange) {
         // save reference to HW Map
 
         DbgLog.msg("DM10337 -- Starting HardwareDM Init");
 
         hwMap = ahwMap;
+
+        // Only setup the IMU if we are going to need it to save time
+        if (useGyroRange) {
+            // Set up the parameters with which we will use our IMU. Note that integration
+            // algorithm here just reports accelerations to the logcat log; it doesn't actually
+            // provide positional information.
+            // Do this first as it takes the longest to finish
+            BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+            parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
+            parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+            parameters.calibrationDataFile = "AdafruitIMUCalibration.json"; // see the calibration sample opmode
+            parameters.loggingEnabled      = true;
+            parameters.loggingTag          = "IMU";
+            parameters.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
+
+            // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
+            // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
+            // and named "adaGyro".
+            adaGyro = hwMap.get(BNO055IMU.class, "gyro");
+            adaGyro.initialize(parameters);
+
+            DbgLog.msg("DM10337 -- Gyro modes set and gyro initialized.");
+
+        }
+
 
         // Define and Initialize Motors
         lfDrive   = hwMap.dcMotor.get("lf motor");
@@ -187,8 +225,11 @@ public class HardwareDM
         // Define touch sensor
         liftLimit = hwMap.touchSensor.get("ts");
 
-        // Define range sensor
-        rangeSensor = hwMap.get(ModernRoboticsI2cRangeSensor.class, "range");
+        if (useGyroRange) {
+            // Only setup the range sensor if requested
+            // Define range sensor
+            rangeSensor = hwMap.get(ModernRoboticsI2cRangeSensor.class, "range");
+        }
 
         DbgLog.msg("DM10337 -- Finished mapping all hardware.");
 
@@ -226,31 +267,7 @@ public class HardwareDM
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         liftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        // Setup shooter motor max speeds
-        // Should remove this code -- deprecated -- but will have to return default speed
-        //lShoot.setMaxSpeed(SHOOT_MAX_RPM);
-        //rShoot.setMaxSpeed(SHOOT_MAX_RPM);
-
         DbgLog.msg("DM10337 -- Motor modes set.");
-
-        // Set up the parameters with which we will use our IMU. Note that integration
-        // algorithm here just reports accelerations to the logcat log; it doesn't actually
-        // provide positional information.
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
-        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        parameters.calibrationDataFile = "AdafruitIMUCalibration.json"; // see the calibration sample opmode
-        parameters.loggingEnabled      = true;
-        parameters.loggingTag          = "IMU";
-        parameters.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
-
-        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
-        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
-        // and named "adaGyro".
-        adaGyro = hwMap.get(BNO055IMU.class, "gyro");
-        adaGyro.initialize(parameters);
-
-        DbgLog.msg("DM10337 -- Gyro modes set and gyro initialized.");
 
         // Retrieve and initialize the Adafruit color sensor
         beaconColor = hwMap.colorSensor.get("color");

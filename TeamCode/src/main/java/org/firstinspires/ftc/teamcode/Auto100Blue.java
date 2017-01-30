@@ -43,6 +43,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -123,8 +124,8 @@ public class Auto100Blue extends LinearOpMode {
 
         DbgLog.msg("DM10337- Starting Auto 100 init.  We are:" + (amIBlue()?"Blue":"Red"));
 
-        // Init the robot hardware
-        robot.init(hardwareMap);
+        // Init the robot hardware -- including gyro and range finder
+        robot.init(hardwareMap, true);
 
         // And turn on the LED on stripe finder
         robot.stripeColor.enableLed(true);
@@ -141,10 +142,30 @@ public class Auto100Blue extends LinearOpMode {
         DbgLog.msg("DM10337 -- Drive train encoders reset");
 
         DbgLog.msg("DM10337- Finished Init");
+
+        // Show telemetry for gyro status
+        telemetry.addData("IMU calibrated: ", robot.adaGyro.isSystemCalibrated());
+        telemetry.addData("IMU Gyro calibrated:  ", robot.adaGyro.isGyroCalibrated());
+        telemetry.update();
+
         // Wait for the game to start (driver presses PLAY)
-        //waitForStart();
-        // Change off of waitForStart() as it appears to be causing delay at start
+
+        // Set a timer of how often to update gyro status telemetry
+        ElapsedTime updateGyroStatTimer = new ElapsedTime();
+        updateGyroStatTimer.reset();
         while (!isStarted()) {
+            if (updateGyroStatTimer.milliseconds() >= 500) {
+                // Update telemetry every 0.5 seconds
+                telemetry.addData("IMU calibrated: ", robot.adaGyro.isSystemCalibrated());
+                telemetry.addData("IMU Gyro calibrated:  ", robot.adaGyro.isGyroCalibrated());
+
+                // Do a gyro read to keep it "fresh"
+                telemetry.addData("Gyro heading: ", readGyro());
+                telemetry.update();
+
+                // And reset the timer
+                updateGyroStatTimer.reset();
+            }
             idle();
         }
 
@@ -276,7 +297,7 @@ public class Auto100Blue extends LinearOpMode {
 
 
 
-        //telemetry.addData("Path", "Complete");
+        telemetry.addData("Path", "Complete");
         telemetry.update();
     }
 
@@ -667,8 +688,8 @@ public class Auto100Blue extends LinearOpMode {
 
         // Check for red
         if (adaHSV[0] > RED_MIN && adaHSV[0] < RED_MAX) {
-            telemetry.addData("beacon", -1);
-            telemetry.update();
+            //telemetry.addData("beacon", -1);
+            //telemetry.update();
             DbgLog.msg("DM10337- Beacon color found red  alpha:" +
                     robot.beaconColor.alpha() +
                     "  hue:" + adaHSV[0] );

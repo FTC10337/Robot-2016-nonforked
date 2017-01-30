@@ -110,8 +110,9 @@ public class TeleOpMain extends OpMode{
 
         /* Initialize the hardware variables.
          * The init() method of the hardware class does all the work here
+         * Specifically don't need gyro and range finder so skip it to save time.
          */
-        robot.init(hardwareMap);
+        robot.init(hardwareMap, false);
 
         DbgLog.msg("DM10337 -- Finished robot.init");
 
