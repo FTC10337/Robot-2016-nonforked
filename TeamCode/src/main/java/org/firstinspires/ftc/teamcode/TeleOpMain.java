@@ -71,7 +71,8 @@ public class TeleOpMain extends OpMode{
     boolean              fireCamPaused           = false;    // Currently in autopause mode
     ElapsedTime          fireCamTimer            = new ElapsedTime();
     ElapsedTime          fireCamPauseTimer       = new ElapsedTime();
-    final double         FIRE_CAM_MIN_TIME       = 200;      // milliseconds
+    final double         FIRE_CAM_MIN_TIME       = 000;      // milliseconds
+    final double         FIRE_CAM_PAUSE_MIN      = 100;      // milliseconds
     final double         FIRE_CAM_MAX_TIME       = 500;      // milliseconds
     final double         FIRE_CAM_ERR_TIME       = 1500;     // milliseconds
     final double         FIRE_CAM_PAUSE_TIME     = 100;      // milliseconds
@@ -178,7 +179,7 @@ public class TeleOpMain extends OpMode{
 
         // Check the sensor switch and time mark it as pressed
         // Also flag that no pause done this cycle
-        if (robot.camSwitch.isPressed()) {
+        if (robot.camSwitch.isPressed()) {  // Need to check against the hardware wiring of switch!
             fireCamTimer.reset();           // Keep track of time since we hit switch
             fireCamPauseDone = false;       // Made a full revolution so may need to pause again
         }
@@ -266,7 +267,7 @@ public class TeleOpMain extends OpMode{
                     fireCamHot = true;
                 }
             } else if (!fireCamPauseDone && fireCamHot &&
-                    (fireCamTimer.milliseconds() >= FIRE_CAM_MIN_TIME) &&
+                    (fireCamTimer.milliseconds() >= FIRE_CAM_PAUSE_MIN) &&
                     (fireCamTimer.milliseconds() <= FIRE_CAM_MAX_TIME)) {
                     // We are in the potential time window to insert a new auto pause
                     stopFireCam();
