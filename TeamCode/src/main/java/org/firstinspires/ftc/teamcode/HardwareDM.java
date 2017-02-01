@@ -88,6 +88,9 @@ public class HardwareDM
     /* lift limit switch - touch sensor */
     public TouchSensor liftLimit = null;
 
+    /* firing cam sensor switch */
+    public TouchSensor camSwitch = null;
+
     // Ultrasonic range sensor
     public ModernRoboticsI2cRangeSensor rangeSensor;
 
@@ -222,8 +225,9 @@ public class HardwareDM
         pivot.setPosition(PIVOT_HOME);
         //    liftDeploy.setPosition(LIFT_DEPLOY_HOME);
 
-        // Define touch sensor
+        // Define touch sensors
         liftLimit = hwMap.touchSensor.get("ts");
+        camSwitch = hwMap.touchSensor.get("cs");
 
         if (useGyroRange) {
             // Only setup the range sensor if requested

@@ -34,22 +34,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package org.firstinspires.ftc.teamcode;
 
-import android.app.Activity;
-import android.graphics.Color;
-import android.view.View;
-
 import com.qualcomm.ftccommon.DbgLog;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
-import org.firstinspires.ftc.robotcore.external.Func;
-import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import java.util.Locale;
 
 /**
  * This file provides  Telop driving for Dark Matter 2016-17 robot.
@@ -76,7 +65,17 @@ public class TeleOpMain extends OpMode{
     double               shootSpeed              = robot.SHOOT_DEFAULT;
     static boolean       shootPressed            = false;
     boolean              shooterHot              = false;
-    boolean              fireCamHot              = false;
+    boolean              fireCamHot              = false;    // Starts off stopped at Teleop start
+    boolean              fireCamStopRequested    = true;     // Starts off stopped at TeleOp start
+    boolean              fireCamPauseDone        = true;     // No pause needed at start since not running
+    boolean              fireCamPaused           = false;    // Currently in autopause mode
+    ElapsedTime          fireCamTimer            = new ElapsedTime();
+    ElapsedTime          fireCamPauseTimer       = new ElapsedTime();
+    final double         FIRE_CAM_MIN_TIME       = 200;      // milliseconds
+    final double         FIRE_CAM_MAX_TIME       = 500;      // milliseconds
+    final double         FIRE_CAM_ERR_TIME       = 1500;     // milliseconds
+    final double         FIRE_CAM_PAUSE_TIME     = 100;      // milliseconds
+
 
     // Keep track of the status of the intake
     boolean              intakeIn                = false;    // intake running forward
@@ -176,22 +175,118 @@ public class TeleOpMain extends OpMode{
         /*
             Code for the shooter firing cam
          */
+
+        // Check the sensor switch and time mark it as pressed
+        // Also flag that no pause done this cycle
+        if (robot.camSwitch.isPressed()) {
+            fireCamTimer.reset();           // Keep track of time since we hit switch
+            fireCamPauseDone = false;       // Made a full revolution so may need to pause again
+        }
+
+        // Check the gamepad inputs and process start/stop
         if (gamepad2.right_trigger <= 0.2) {
-            // Stopped when not pressed
-            robot.fire.setPower(0.0);
-            if (!fireCamHot) {
-                // Not already running it up so log start event
-                DbgLog.msg("DM10337 -- Starting firing cam");
-                fireCamHot = true;
-            }
-        } else if (gamepad2.right_trigger > 0.2) {
-            // Running when pressed
-            robot.fire.setPower(1.0);
-            if (fireCamHot) {
-                // Was running so log stop event
-                DbgLog.msg("DM10337 -- Stopping firing cam");
+            /** This block of code process the conditions when not pressing the fire button
+             * There are 5 conditions we have to account for
+             * 1>  We are "auto paused" -- in which case its OK to just stop
+             * 2>  We are running, but not yet in our targeted stop zone
+             * 3>  We are running, and in targeted stop zone so we will stop here
+             * 4>  We are running, and it appears the sensor switch isn't working so just stop here
+             * 5>  We are running, and past "point of no return" so go 1 more revolution
+             * We also have a catchall else in case of some error conditon which forces stop.
+             *
+             */
+
+            // If we were running, look at timer to see if we are in the "stop here window"
+            if (fireCamPaused) {
+                // Already paused so we can just go full stop
+                stopFireCam();
+                fireCamPaused = false;
                 fireCamHot = false;
+                fireCamPauseDone = true;
+                DbgLog.msg("DM10337 -- Stopped while in auto pause mode.");
+            } else if (fireCamHot &&
+                    (fireCamTimer.milliseconds() < FIRE_CAM_MIN_TIME)) {
+                // Requesting stop but not at optimal stop zone yet
+                // Keep going but log the event if first time detected
+                if (!fireCamStopRequested) {
+                    DbgLog.msg("DM10337 -- Fire cam stop requested before reaching target zone.  Keep going.");
+                }
+            } else if (fireCamHot &&
+                    (fireCamTimer.milliseconds() >= FIRE_CAM_MIN_TIME) &&
+                    (fireCamTimer.milliseconds() <= FIRE_CAM_MAX_TIME)) {
+                // We are running and in our desired range to stop
+                stopFireCam();
+                fireCamPaused = false;
+                fireCamHot = false;
+                fireCamPauseDone = true;
+                DbgLog.msg("DM10337 -- Stopping firing cam in target zone");
+            } else if (fireCamHot &&
+                    (fireCamTimer.milliseconds() >= FIRE_CAM_ERR_TIME)) {
+                // We are running and didn't see a sensor timer reset
+                // Sensor switch probably not working so just stop here
+                stopFireCam();
+                fireCamPaused = false;
+                fireCamHot = false;
+                fireCamPauseDone = true;
+                DbgLog.msg("DM10337 -- Stopping firing cam -- switch not working");
+            } else if (fireCamTimer.milliseconds() >= FIRE_CAM_MAX_TIME) {
+                // We are past the point of no return.  Keep going another round
+                if (!fireCamStopRequested) {
+                    // First time we see this event so log
+                    DbgLog.msg("DM10337 -- Requested firing cam stop but too late.  Keep going.");
+                }
+            } else {
+                // Probably already stopped -- but just in case force stop it again
+                stopFireCam();
+                if (fireCamHot) {
+                    DbgLog.msg("DM10337 -- Firing Cam stopped for other reason");
+
+                }
+                fireCamPaused = false;
+                fireCamHot = false;
+                fireCamPauseDone = true;
             }
+            fireCamStopRequested = true;        // Keep track if this is the first time we see this button release
+
+        } else if (gamepad2.right_trigger > 0.2) {
+            /**
+             * We have 3 conditions to account for when fire button is pressed
+             * 1>  We are already in "auto pause" mode -- restart the cam if pause is done
+             * 2>  Have not yet paused this revolution and we are in "auto pause" range
+             * 3>  Any other case -- rotate the firing cam
+             */
+
+            if (fireCamPaused) {
+                // Already started pause -- is pause done?
+                if (fireCamPauseTimer.milliseconds() >= FIRE_CAM_PAUSE_TIME) {
+                    // Restart the cam if needed since pause done
+                    startFireCam();
+                    DbgLog.msg("DM10337 -- Restarting fire cam after auto pause.");
+                    fireCamPaused = false;
+                    fireCamHot = true;
+                }
+            } else if (!fireCamPauseDone && fireCamHot &&
+                    (fireCamTimer.milliseconds() >= FIRE_CAM_MIN_TIME) &&
+                    (fireCamTimer.milliseconds() <= FIRE_CAM_MAX_TIME)) {
+                    // We are in the potential time window to insert a new auto pause
+                    stopFireCam();
+                    fireCamPauseDone = true;
+                    fireCamPaused = true;
+                    fireCamPauseTimer.reset();
+                    DbgLog.msg("DM10337 -- Starting fire cam auto pause.");
+            } else {
+                // Not auto paused
+                // So make sure we are running
+                startFireCam();
+                if (!fireCamHot) {
+                    // Wasn't already running so log it
+                    DbgLog.msg("DM10337 -- Starting firing cam.");
+                }
+                fireCamHot = true;
+                fireCamPaused = false;
+            }
+
+            fireCamStopRequested = false;
         }
 
         /*
@@ -222,9 +317,9 @@ public class TeleOpMain extends OpMode{
             // Stopped when not pressed
             robot.lShoot.setPower(0.0);
             robot.rShoot.setPower(0.0);
-            if (!shooterHot) {
-                // Not already running so log start event
-                shooterHot = true;
+            if (shooterHot) {
+                //  already running so log stop event
+                shooterHot = false;
                 DbgLog.msg("DM10337 -- Stopping shooter flywheels");
             }
 
@@ -232,9 +327,9 @@ public class TeleOpMain extends OpMode{
             // Running when pressed
             robot.lShoot.setPower(shootSpeed);
             robot.rShoot.setPower(shootSpeed);
-            if (shooterHot) {
-                // Was running before so log stop event
-                shooterHot = false;
+            if (!shooterHot) {
+                // Was not running before so log stop event
+                shooterHot = true;
                 DbgLog.msg("DM10337 -- Starting shooter flywheels");
             }
         }
@@ -481,5 +576,17 @@ public class TeleOpMain extends OpMode{
         }
     }
 
+    /**
+     * Start the firing cam
+     */
+    public void startFireCam() {
+        robot.fire.setPower(1.0);
+    }
 
+    /**
+     * Stop the firing cam
+     * */
+    public void stopFireCam() {
+        robot.fire.setPower(0.0);
+    }
 }
