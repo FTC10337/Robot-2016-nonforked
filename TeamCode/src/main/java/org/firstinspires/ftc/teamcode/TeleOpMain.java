@@ -139,6 +139,8 @@ public class TeleOpMain extends OpMode{
     @Override
     public void loop() {
 
+        // Temporary read of cam switch
+        telemetry.addData("Cam Switch :", robot.camSwitch.isPressed());
 
         /*
            Driving code -- read joysticks and drive the motors
@@ -377,7 +379,7 @@ public class TeleOpMain extends OpMode{
                 pickupDeployTimer.reset();      // Set timer of how long to wait
 
                 // Deploy the cap ball lift forks
-                //robot.liftDeploy.setPosition(robot.LIFT_DEPLOY_MAX_RANGE);
+                robot.liftDeploy.setPosition(robot.LIFT_DEPLOY_MAX_RANGE);
 
                 DbgLog.msg("DM10337 -- Deploying the cap ball lift forks");
             }
@@ -409,12 +411,12 @@ public class TeleOpMain extends OpMode{
 
             // For safety verify servo position and then move it
             pivotPos = Range.clip(pivotPos, robot.PIVOT_MIN_RANGE, robot.PIVOT_MAX_RANGE);
-            // robot.pivot.setPosition(pivotPos);
+            robot.pivot.setPosition(pivotPos);
 
             // And process the lift motor
             if ((gamepad2.right_stick_y < -0.2) && (!robot.liftLimit.isPressed())) {
                 // Lift it up
-                // robot.liftMotor.setPower(robot.LIFT_UP_SPEED);
+                robot.liftMotor.setPower(robot.LIFT_UP_SPEED);
                 if (!liftMotorUp) {
                     // We weren't going up before so log event
                     liftMotorUp = true;
@@ -423,7 +425,7 @@ public class TeleOpMain extends OpMode{
                 }
             } else if (gamepad2.right_stick_y > 0.2) {
                 // Or drop it down
-                // robot.liftMotor.setPower(robot.LIFT_DOWN_SPEED);
+                robot.liftMotor.setPower(robot.LIFT_DOWN_SPEED);
                 if (!liftMotorDown) {
                     // We weren't moving down before so log event
                     liftMotorDown = true;

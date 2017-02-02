@@ -219,11 +219,11 @@ public class HardwareDM
         fire = hwMap.crservo.get("fire");
         beacon = hwMap.servo.get("beacon");
         pivot = hwMap.servo.get("pivot");
-        //    liftDeploy = hwMap.servo.get("lift deploy");        // Ready to turn on when hardware ready
+        liftDeploy = hwMap.servo.get("lift deploy");        // Ready to turn on when hardware ready
 
         beacon.setPosition(BEACON_HOME);
         pivot.setPosition(PIVOT_HOME);
-        //    liftDeploy.setPosition(LIFT_DEPLOY_HOME);
+        liftDeploy.setPosition(LIFT_DEPLOY_HOME);
 
         // Define touch sensors
         liftLimit = hwMap.touchSensor.get("ts");
