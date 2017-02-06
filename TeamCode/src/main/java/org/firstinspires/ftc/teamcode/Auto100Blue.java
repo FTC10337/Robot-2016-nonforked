@@ -191,7 +191,7 @@ public class Auto100Blue extends LinearOpMode {
         sleep(1500);        // Wait for shot to finish
 
         // Turn towards the beacons using gyro
-        gyroTurn(TURN_SPEED, amIBlue()?-75.0:65.0);
+        gyroTurn(TURN_SPEED, amIBlue()?-75.0:75.0);
 
         // Stop the shooter
         robot.fire.setPower(0.0);
@@ -200,16 +200,17 @@ public class Auto100Blue extends LinearOpMode {
 
         // Drive towards the beacon wall
         // Use gyro to hold heading
-        encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?73:52.5, 5.0,
-                true, amIBlue()?-42.0:66.0, false);
+        // Distance is the "inside" of the turn distance
+        encoderDrive(DRIVE_SPEED, amIBlue()?64:64.0, 5.0,
+                true, amIBlue()?-42.0:42.0, false);
 
         // Turn parallel to beacon wall using gyro
         // Had to tweak the red direction off of 180 to correct alignment error after turn
-        gyroTurn(TURN_SPEED, amIBlue()?0.0:175.0);
+        gyroTurn(TURN_SPEED, amIBlue()?0.0:180.0);
 
         // Move slowly to approach 1st beacon -- Slow allows us to be more accurate w/ alignment
         // Autocorrects any heading errors while driving
-        encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?-12.5:1.0, 5.0, true,
+        encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?-12.5:10.0, 5.0, true,
                 amIBlue()?0.0:180.0, false, true, WALL_DISTANCE);
 
         // Use line finder to align to white line
@@ -246,7 +247,7 @@ public class Auto100Blue extends LinearOpMode {
 
         // Drive to the 2nd beacon.  Tweaked Red heading to correct alignment errors.
         // Use rangefinder correction to get us to 10cm from all
-        encoderDrive(DRIVE_SPEED, amIBlue()?42.0 - distCorrection:-44.0 - distCorrection, 4.0,
+        encoderDrive(DRIVE_SPEED, amIBlue()?42.0 - distCorrection:-42.0 - distCorrection, 4.0,
                 true, amIBlue()?0.0:180.0, false, true, WALL_DISTANCE);
 
         // Find the 2nd white line
@@ -281,12 +282,17 @@ public class Auto100Blue extends LinearOpMode {
 
         }
 
-        // Reverse the intake to keep any particles or cap balls out of our way
-        robot.intake.setPower(-1.0);
+        if (!amIBlue()){
+            // Reverse the intake to keep any particles or cap balls out of our way
+            // Only need this on the red side!
+            robot.intake.setPower(-1.0);
+        }
+
 
         // And drive to the center vortex, knock cap ball, and park
         // Note that we are turning while moving to save time at the expense of accuracy
-        encoderDrive(1.0, amIBlue()?-75.0:74.0, 10.0, true,
+        // Distances adjusted to "inside" of requested turn
+        encoderDrive(1.0, amIBlue()?-60.0:58.0, 10.0, true,
                 amIBlue()?-60.0:245, false);
 
         // And stop
