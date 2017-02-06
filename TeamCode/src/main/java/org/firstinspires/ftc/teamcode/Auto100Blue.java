@@ -392,11 +392,36 @@ public class Auto100Blue extends LinearOpMode {
                     "  distance:" + distance + "  timeout:" + timeout +
                     "  useGyro:" + useGyro + " heading:" + heading);
 
+            // Calculate "adjusted" distance  for each side to account for requested turn during run
+            // Purpose of code is to have PIDs closer to finishing even on curved moves
+            // This prevents jerk to one side at stop
+            double leftDistance = distance;
+            double rightDistance = distance;
+            if (useGyro) {
+                // We are gyro steering -- are we requesting a turn while driving?
+                double headingChange = getError(curHeading);
+                if (Math.abs(headingChange) > 5.0) {
+                    //Heading change is significant enough to account for
+                    if (headingChange > 0.0) {
+                        // Assume 16 inch wheelbase
+                        // Add extra distance to the wheel on outside of turn
+                        rightDistance += 2 * 3.1415 * 16 * headingChange / 360.0;
+                        DbgLog.msg("DM10337 -- Turn adjusted R distance:" + rightDistance);
+                    } else {
+                        // Assume 16 inch wheelbase
+                        // Add extra distance from the wheel on inside of turn
+                        // headingChange is - so this is increasing the left distance
+                        leftDistance -= 2 * 3.1415 * 16 * headingChange / 360.0;
+                        DbgLog.msg("DM10337 -- Turn adjusted L distance:" + leftDistance);
+                    }
+                }
+            }
+
             // Determine new target encoder positions, and pass to motor controller
-            newLFTarget = robot.lfDrive.getCurrentPosition() + (int)(distance * robot.COUNTS_PER_INCH);
-            newLRTarget = robot.lrDrive.getCurrentPosition() + (int)(distance * robot.COUNTS_PER_INCH);
-            newRFTarget = robot.rfDrive.getCurrentPosition() + (int)(distance * robot.COUNTS_PER_INCH);
-            newRRTarget = robot.rrDrive.getCurrentPosition() + (int)(distance * robot.COUNTS_PER_INCH);
+            newLFTarget = robot.lfDrive.getCurrentPosition() + (int)(leftDistance * robot.COUNTS_PER_INCH);
+            newLRTarget = robot.lrDrive.getCurrentPosition() + (int)(leftDistance * robot.COUNTS_PER_INCH);
+            newRFTarget = robot.rfDrive.getCurrentPosition() + (int)(rightDistance * robot.COUNTS_PER_INCH);
+            newRRTarget = robot.rrDrive.getCurrentPosition() + (int)(rightDistance * robot.COUNTS_PER_INCH);
 
             while(robot.lfDrive.getTargetPosition() != newLFTarget){
                 robot.lfDrive.setTargetPosition(newLFTarget);
@@ -426,8 +451,8 @@ public class Auto100Blue extends LinearOpMode {
 
             // Set the motors to the starting power
             robot.lfDrive.setPower(Math.abs(curSpeed));
-            robot.lrDrive.setPower(Math.abs(curSpeed));
             robot.rfDrive.setPower(Math.abs(curSpeed));
+            robot.lrDrive.setPower(Math.abs(curSpeed));
             robot.rrDrive.setPower(Math.abs(curSpeed));
 
             // keep looping while we are still active, and there is time left, until at least 1 motor reaches target
@@ -489,8 +514,8 @@ public class Auto100Blue extends LinearOpMode {
 
                 // And rewrite the motor speeds
                 robot.lfDrive.setPower(Math.abs(leftSpeed));
-                robot.lrDrive.setPower(Math.abs(leftSpeed));
                 robot.rfDrive.setPower(Math.abs(rightSpeed));
+                robot.lrDrive.setPower(Math.abs(leftSpeed));
                 robot.rrDrive.setPower(Math.abs(rightSpeed));
 
                 // Allow time for other processes to run.
@@ -507,8 +532,8 @@ public class Auto100Blue extends LinearOpMode {
 
             // Stop all motion;
             robot.lfDrive.setPower(0);
-            robot.lrDrive.setPower(0);
             robot.rfDrive.setPower(0);
+            robot.lrDrive.setPower(0);
             robot.rrDrive.setPower(0);
 
             // Turn off RUN_TO_POSITION
@@ -539,8 +564,8 @@ public class Auto100Blue extends LinearOpMode {
 
             // Drive til we see the stripe
             robot.lfDrive.setPower(speed);
-            robot.lrDrive.setPower(speed);
             robot.rfDrive.setPower(speed);
+            robot.lrDrive.setPower(speed);
             robot.rrDrive.setPower(speed);
             idle();
         }
@@ -550,8 +575,8 @@ public class Auto100Blue extends LinearOpMode {
 
         // Stop moving
         robot.lfDrive.setPower(0.0);
-        robot.lrDrive.setPower(0.0);
         robot.rfDrive.setPower(0.0);
+        robot.lrDrive.setPower(0.0);
         robot.rrDrive.setPower(0.0);
 
         // And reset to float mode
@@ -623,8 +648,8 @@ public class Auto100Blue extends LinearOpMode {
 
         // Send desired speeds to motors.
         robot.lfDrive.setPower(leftSpeed);
-        robot.lrDrive.setPower(leftSpeed);
         robot.rfDrive.setPower(rightSpeed);
+        robot.lrDrive.setPower(leftSpeed);
         robot.rrDrive.setPower(rightSpeed);
 
         return onTarget;
