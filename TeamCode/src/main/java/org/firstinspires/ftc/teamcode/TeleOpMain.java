@@ -40,6 +40,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
 /**
  * This file provides  Telop driving for Dark Matter 2016-17 robot.
  *
@@ -379,7 +381,7 @@ public class TeleOpMain extends OpMode{
                 pickupDeployTimer.reset();      // Set timer of how long to wait
 
                 // Deploy the cap ball lift forks
-                robot.liftDeploy.setPosition(robot.LIFT_DEPLOY_MAX_RANGE);
+                robot.liftDeploy.setPosition(robot.LIFT_DEPLOY_MIN_RANGE);
 
                 DbgLog.msg("DM10337 -- Deploying the cap ball lift forks");
             }
@@ -393,7 +395,7 @@ public class TeleOpMain extends OpMode{
             // The cap ball lift mechanism is ready to go!
 
             // Process the pivot servo
-            if (gamepad2.left_stick_y < -0.2) {
+            if (gamepad1.left_bumper) {
                 // Pressed stick so pivot the lift down
                 pivotPos = robot.PIVOT_MAX_RANGE;
                 if (!pivotDeployed) {
@@ -499,6 +501,7 @@ public class TeleOpMain extends OpMode{
         }
 
         // Finally update the telemetry for this cycle
+        telemetry.addData("Range:  ", robot.rangeSensor.getDistance(DistanceUnit.CM));
         updateTelemetry(telemetry);
 
 

@@ -132,16 +132,16 @@ public class HardwareDM
     // Servo max min ranges
     public final static double PIVOT_HOME = 0.025;
     public final static double BEACON_HOME = 0.0;
-    public final static double LIFT_DEPLOY_HOME = 0.0;          // Tentative -- adjust once hardware mounted
+    public final static double LIFT_DEPLOY_HOME = 0.84;          // Tentative -- adjust once hardware mounted
     public final static double PIVOT_MIN_RANGE  = 0.025;
     public final static double PIVOT_MAX_RANGE  = 0.55;
     public final static double BEACON_MIN_RANGE  = 0.0;
-    public final static double BEACON_MAX_RANGE  = 0.52;
-    public final static double LIFT_DEPLOY_MIN_RANGE = 0.0;     // Tentantive
-    public final static double LIFT_DEPLOY_MAX_RANGE = 1.0;     // Tentantive
+    public final static double BEACON_MAX_RANGE  = 0.64;
+    public final static double LIFT_DEPLOY_MIN_RANGE = 0.6;     // Tentantive
+    public final static double LIFT_DEPLOY_MAX_RANGE = 0.84;     // Tentantive
 
     // How long to wait for cap lift forks to deploy
-    public final static double DEPLOY_WAIT = 1000;  // Wait 1 second for ball pickup to deploy
+    public final static double DEPLOY_WAIT = 1500;  // Wait 1 second for ball pickup to deploy
 
     /* Local OpMode members. */
     HardwareMap hwMap  = null;
@@ -229,11 +229,8 @@ public class HardwareDM
         liftLimit = hwMap.touchSensor.get("ts");
         camSwitch = hwMap.touchSensor.get("cs");
 
-        if (useGyroRange) {
-            // Only setup the range sensor if requested
-            // Define range sensor
-            rangeSensor = hwMap.get(ModernRoboticsI2cRangeSensor.class, "range");
-        }
+        rangeSensor = hwMap.get(ModernRoboticsI2cRangeSensor.class, "range");
+
 
         DbgLog.msg("DM10337 -- Finished mapping all hardware.");
 
