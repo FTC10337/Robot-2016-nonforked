@@ -81,13 +81,13 @@ public class Auto100Blue extends LinearOpMode {
 
     static final double     HEADING_THRESHOLD       = 2 ;      // As tight as we can make it with an integer gyro
     static final double     P_TURN_COEFF            = 0.010;   // Larger is more responsive, but also less accurate
-    static final double     P_DRIVE_COEFF_1         = 0.05;  // Larger is more responsive, but also less accurate
-    static final double     P_DRIVE_COEFF_2         = 0.03;
+    static final double     P_DRIVE_COEFF_1         = 0.06;  // Larger is more responsive, but also less accurate
+    static final double     P_DRIVE_COEFF_2         = 0.05;
 
     // Coeff for doing range sensor driving -- 1.25 degrees per CM off
     static final double     P_DRIVE_COEFF_3         = 1.25;
     static final double     RANGE_THRESHOLD         = 1.0;  // OK at +/- 1cm
-    static final double     WALL_DISTANCE           = 13.0; // 11 cm from wall for beacons
+    static final double     WALL_DISTANCE           = 12.0; // 11 cm from wall for beacons
 
     // White line finder thresholds
     static final double     WHITE_THRESHOLD         = 2.0;      // Line finder
@@ -188,7 +188,7 @@ public class Auto100Blue extends LinearOpMode {
 
         // Fire the balls
         robot.fire.setPower(1.0);
-        sleep(1500);        // Wait for shot to finish
+        sleep(1750);        // Wait for shot to finish
 
         // Turn towards the beacons using gyro
         gyroTurn(TURN_SPEED, amIBlue()?-75.0:75.0);
@@ -204,7 +204,7 @@ public class Auto100Blue extends LinearOpMode {
         encoderDrive(DRIVE_SPEED, amIBlue()?66:64.5, 5.0,
                 true, amIBlue()?-42.0:42.0, false);
 
-        // waitForSwitch();
+         //waitForSwitch();
 
         // Turn parallel to beacon wall using gyro
         // Had to tweak the red direction off of 180 to correct alignment error after turn
@@ -214,7 +214,7 @@ public class Auto100Blue extends LinearOpMode {
 
         // Move slowly to approach 1st beacon -- Slow allows us to be more accurate w/ alignment
         // Autocorrects any heading errors while driving
-        encoderDrive(DRIVE_SPEED, amIBlue()?-14:29.0, 5.0, true,
+        encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?-16:29.0, 5.0, true,
                 amIBlue()?0.0:180.0, false, true, WALL_DISTANCE);
 
         //waitForSwitch();
@@ -231,10 +231,10 @@ public class Auto100Blue extends LinearOpMode {
         beacon = beaconColor();
         if (beacon == 1) {
             // We see blue
-            distCorrection = amIBlue()?2.00:-3.00;
+            distCorrection = amIBlue()?2.25:-3.5;
         } else if (beacon == -1) {
             // We see red
-            distCorrection = amIBlue()?-3.00:2.00;
+            distCorrection = amIBlue()?-2.75:1.25;
         } else {
             // We see neither
             distCorrection = 0;
@@ -243,7 +243,7 @@ public class Auto100Blue extends LinearOpMode {
         if (beacon != 0) {
             // We saw a beacon color so move to align beacon pusher
             // We turn by +/- 4 degrees to account for curved front of beacon
-            encoderDrive(DRIVE_SPEED, distCorrection, 2.5, true,
+            encoderDrive(DRIVE_SPEED_SLOW, distCorrection, 2.5, true,
                     amIBlue()?(0-4*beacon):(180+3*beacon), true);
 
             //waitForSwitch();
@@ -257,10 +257,10 @@ public class Auto100Blue extends LinearOpMode {
 
         // Drive to the 2nd beacon.  Tweaked Red heading to correct alignment errors.
         // Use rangefinder correction to get us to 10cm from all
-        encoderDrive(DRIVE_SPEED, amIBlue()?42.0 - distCorrection:-42.0 - distCorrection, 4.0,
+        encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?42.0 - distCorrection:-44.0 - distCorrection, 4.0,
                 true, amIBlue()?0.0:180.0, false, true, WALL_DISTANCE);
 
-        //waitForSwitch();
+       // waitForSwitch();
 
         // Find the 2nd white line
         findLine(amIBlue()?0.2:-0.2, 3.0);
@@ -268,14 +268,16 @@ public class Auto100Blue extends LinearOpMode {
         // wait for color sensor
         sleep(1000);
 
+        //waitForSwitch();
+
         // Check the beacon color
         beacon = beaconColor();
         if (beacon == 1) {
             // I see blue
-            distCorrection = amIBlue()?2.00:-3.50;
+            distCorrection = amIBlue()?1.50:-2.25;
         } else if (beacon == -1) {
             // I see red
-            distCorrection = amIBlue()?-3.75:2.50;
+            distCorrection = amIBlue()?-3.75:1.75;
         } else {
             // I see neither
             distCorrection = 0;
@@ -284,7 +286,7 @@ public class Auto100Blue extends LinearOpMode {
         if (beacon != 0) {
             // We saw a beacon color so move to align beacon pusher
             // Adjust by +/- 4 degrees to account for curved front of beacon
-            encoderDrive(DRIVE_SPEED, distCorrection, 2.5, true,
+            encoderDrive(DRIVE_SPEED_SLOW, distCorrection, 2.5, true,
                     amIBlue()?(0-4*beacon):(180+3*beacon), true);
 
             //waitForSwitch();
@@ -303,13 +305,21 @@ public class Auto100Blue extends LinearOpMode {
         }
 
 
+        double angleAdjust = 0.0;
+        if (amIBlue() && distCorrection > 0) {
+            // Need to adjust angle to keep from hitting center pole
+            angleAdjust = 15.0;
+        } else if (!amIBlue() && distCorrection < 0) {
+            // Need to adjust angle to keep from hitting center pole
+            angleAdjust = -15.0;
+        }
+
         // And drive to the center vortex, knock cap ball, and park
         // Note that we are turning while moving to save time at the expense of accuracy
         // Distances adjusted to "inside" of requested turn
         encoderDrive(1.0, amIBlue()?-72.0:58.0, 10.0, true,
-                amIBlue()?-60.0:245, false);
+                angleAdjust + (amIBlue()?-55.0:245), false);
 
-        //waitForSwitch();
 
         // And stop
         robot.intake.setPower(0.0);
@@ -421,19 +431,19 @@ public class Auto100Blue extends LinearOpMode {
             double rightDistance = distance;
             if (useGyro) {
                 // We are gyro steering -- are we requesting a turn while driving?
-                double headingChange = getError(curHeading);
+                double headingChange = getError(curHeading) * Math.signum(distance);
                 if (Math.abs(headingChange) > 5.0) {
                     //Heading change is significant enough to account for
                     if (headingChange > 0.0) {
                         // Assume 16 inch wheelbase
                         // Add extra distance to the wheel on outside of turn
-                        rightDistance += 2 * 3.1415 * 16 * headingChange / 360.0;
+                        rightDistance += Math.signum(distance) * 2 * 3.1415 * 16 * headingChange / 360.0;
                         DbgLog.msg("DM10337 -- Turn adjusted R distance:" + rightDistance);
                     } else {
                         // Assume 16 inch wheelbase
                         // Add extra distance from the wheel on inside of turn
                         // headingChange is - so this is increasing the left distance
-                        leftDistance -= 2 * 3.1415 * 16 * headingChange / 360.0;
+                        leftDistance -= Math.signum(distance) * 2 * 3.1415 * 16 * headingChange / 360.0;
                         DbgLog.msg("DM10337 -- Turn adjusted L distance:" + leftDistance);
                     }
                 }

@@ -131,12 +131,12 @@ public class HardwareDM
 
     // Servo max min ranges
     public final static double PIVOT_HOME = 0.025;
-    public final static double BEACON_HOME = 0.0;
-    public final static double LIFT_DEPLOY_HOME = 0.84;          // Tentative -- adjust once hardware mounted
+    public final static double BEACON_HOME = 0.42;
+    public final static double LIFT_DEPLOY_HOME = 0.83;          // Tentative -- adjust once hardware mounted
     public final static double PIVOT_MIN_RANGE  = 0.025;
     public final static double PIVOT_MAX_RANGE  = 0.55;
-    public final static double BEACON_MIN_RANGE  = 0.0;
-    public final static double BEACON_MAX_RANGE  = 0.64;
+    public final static double BEACON_MIN_RANGE  = 0.42;
+    public final static double BEACON_MAX_RANGE  = 1.0;
     public final static double LIFT_DEPLOY_MIN_RANGE = 0.6;     // Tentantive
     public final static double LIFT_DEPLOY_MAX_RANGE = 0.84;     // Tentantive
 

@@ -142,7 +142,11 @@ public class TeleOpMain extends OpMode{
     public void loop() {
 
         // Temporary read of cam switch
-        telemetry.addData("Cam Switch :", robot.camSwitch.isPressed());
+        //telemetry.addData("Cam Switch :", robot.camSwitch.isPressed());
+        //telemetry.addData("Pos: ", beaconPos);
+
+        //if (gamepad1.dpad_up) beaconPos += 0.005;
+        //if (gamepad1.dpad_down) beaconPos -= 0.005;
 
         /*
            Driving code -- read joysticks and drive the motors
