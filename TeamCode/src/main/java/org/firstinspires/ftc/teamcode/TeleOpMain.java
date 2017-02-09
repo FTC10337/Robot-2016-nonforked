@@ -73,9 +73,9 @@ public class TeleOpMain extends OpMode{
     boolean              fireCamPaused           = false;    // Currently in autopause mode
     ElapsedTime          fireCamTimer            = new ElapsedTime();
     ElapsedTime          fireCamPauseTimer       = new ElapsedTime();
-    final double         FIRE_CAM_MIN_TIME       = 000;      // milliseconds
+    final double         FIRE_CAM_MIN_TIME       = 050;      // milliseconds
     final double         FIRE_CAM_PAUSE_MIN      = 100;      // milliseconds
-    final double         FIRE_CAM_MAX_TIME       = 500;      // milliseconds
+    final double         FIRE_CAM_MAX_TIME       = 300;      // milliseconds
     final double         FIRE_CAM_ERR_TIME       = 1500;     // milliseconds
     final double         FIRE_CAM_PAUSE_TIME     = 100;      // milliseconds
 
@@ -143,10 +143,13 @@ public class TeleOpMain extends OpMode{
 
         // Temporary read of cam switch
         //telemetry.addData("Cam Switch :", robot.camSwitch.isPressed());
-        //telemetry.addData("Pos: ", beaconPos);
+        //telemetry.addData("Pos: ", liftDeployPos);
 
-        //if (gamepad1.dpad_up) beaconPos += 0.005;
-        //if (gamepad1.dpad_down) beaconPos -= 0.005;
+        //if (gamepad1.dpad_up) liftDeployPos += 0.005;
+        //if (gamepad1.dpad_down) liftDeployPos -= 0.005;
+        //liftDeployPos = Range.clip(liftDeployPos, 0.0, 1.0);
+        //robot.liftDeploy.setPosition(liftDeployPos);
+
 
         /*
            Driving code -- read joysticks and drive the motors
@@ -505,7 +508,7 @@ public class TeleOpMain extends OpMode{
         }
 
         // Finally update the telemetry for this cycle
-        telemetry.addData("Range:  ", robot.rangeSensor.getDistance(DistanceUnit.CM));
+        //telemetry.addData("Range:  ", robot.rangeSensor.getDistance(DistanceUnit.CM));
         updateTelemetry(telemetry);
 
 
