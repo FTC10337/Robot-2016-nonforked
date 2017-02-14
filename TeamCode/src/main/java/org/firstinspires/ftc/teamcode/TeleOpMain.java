@@ -194,7 +194,7 @@ public class TeleOpMain extends OpMode{
 
 
         // If we aren't moving right now check for "brake mode" to hold position
-        if ((right) < 0.1 && ((left < 0.1) && gamepad1.x)) {
+        if ((Math.abs(right) < 0.1) && ((Math.abs(left) < 0.1) && gamepad1.x)) {
             // Requesting brake mode to hold position against defense (e.g. for shooting)
             if (!braked) {
                 // First time we see this condition to setup brake mode
