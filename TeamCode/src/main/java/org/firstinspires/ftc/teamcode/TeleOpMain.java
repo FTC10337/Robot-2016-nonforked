@@ -37,6 +37,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.ftccommon.DbgLog;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -62,6 +63,13 @@ public class TeleOpMain extends OpMode{
     // Drivetrain constants when in Cap Ball Mode
     final double         CAP_DRIVE_SPEED         = -1.0;        // Reverse the direction
     final double         CAP_TURN_SPEED          = 0.8;         // Slow down the turns a bit
+
+    // Brake mode status on drive train
+    boolean              braked                  = false;       // Not in brake mode initially
+    int                  lfBrakedPosn;
+    int                  lrBrakedPosn;
+    int                  rfBrakedPosn;
+    int                  rrBrakedPosn;
 
     /* Shooter status */
     double               shootSpeed              = robot.SHOOT_DEFAULT;
@@ -174,15 +182,70 @@ public class TeleOpMain extends OpMode{
         double right = throttle - direction;
         double left = throttle + direction;
         // clip the right/left values so that the values never exceed +/- 1
-        right = Range.clip(right, -1, 1);
-        left = Range.clip(left, -1, 1);
+        //right = Range.clip(right, -1, 1);
+        //left = Range.clip(left, -1, 1);
+        // Normalize speeds if any one exceeds +/- 1.0;
+        double max = Math.max(Math.abs(right), Math.abs(left));
+        if (max > 1.0)
+        {
+            left /= max;
+            right /= max;
+        }
 
-        // And lets drive
-        robot.lfDrive.setPower(left);
-        robot.lrDrive.setPower(left);
-        robot.rfDrive.setPower(right);
-        robot.rrDrive.setPower(right);
 
+        // If we aren't moving right now check for "brake mode" to hold position
+        if ((right) < 0.1 && ((left < 0.1) && gamepad1.x)) {
+            // Requesting brake mode to hold position against defense (e.g. for shooting)
+            if (!braked) {
+                // First time we see this condition to setup brake mode
+                DbgLog.msg("DM10337 -- Setting braked mode.");
+                braked = true;
+                robot.setDriveZeroPower(DcMotor.ZeroPowerBehavior.BRAKE);
+                // Record where we are at and set it as motor target to hold
+                lfBrakedPosn = robot.lfDrive.getCurrentPosition();
+                lrBrakedPosn = robot.lrDrive.getCurrentPosition();
+                rfBrakedPosn = robot.rfDrive.getCurrentPosition();
+                rrBrakedPosn = robot.rrDrive.getCurrentPosition();
+                robot.lfDrive.setTargetPosition(lfBrakedPosn);
+                robot.lrDrive.setTargetPosition(lrBrakedPosn);
+                robot.rfDrive.setTargetPosition(rfBrakedPosn);
+                robot.rrDrive.setTargetPosition(rrBrakedPosn);
+                robot.setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
+                // Allow up to max power to hold our position
+                robot.lfDrive.setPower(1.0);
+                robot.rfDrive.setPower(1.0);
+                robot.rfDrive.setPower(1.0);
+                robot.rrDrive.setPower(1.0);
+            } else {
+                // already in brake mode -- nothing to do but log if we are having to push
+                if (robot.lfDrive.isBusy() || robot.lrDrive.isBusy() ||
+                        robot.rfDrive.isBusy() || robot.rrDrive.isBusy()) {
+                    DbgLog.msg("DM10337 -- Being pushed and fighting back.");
+                }
+            }
+        }
+
+
+        if (braked && !gamepad1.x) {
+            // We are leaving braked mode
+            braked = false;
+            DbgLog.msg("DM10337 -- Leaving brake mode");
+            robot.setDriveZeroPower(DcMotor.ZeroPowerBehavior.FLOAT);
+            robot.lfDrive.setPower(0.0);
+            robot.lrDrive.setPower(0.0);
+            robot.rfDrive.setPower(0.0);
+            robot.rrDrive.setPower(0.0);
+            robot.setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
+
+        if (!braked) {
+            // Not braked so we can set the motors to power requested by joysticks
+            // And lets drive
+            robot.lfDrive.setPower(left);
+            robot.lrDrive.setPower(left);
+            robot.rfDrive.setPower(right);
+            robot.rrDrive.setPower(right);
+        }
 
         /*
             Code for the shooter firing cam
