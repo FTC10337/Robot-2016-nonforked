@@ -98,6 +98,7 @@ public class TeleOpMain extends OpMode{
     double               beaconPos               = robot.BEACON_HOME;
     double               pivotPos                = robot.PIVOT_HOME;
     double               liftDeployPos           = robot.LIFT_DEPLOY_HOME;
+    double               capholdPos              = robot.CAPHOLD_HOME;
 
     boolean              beaconDeployed          = false;
     boolean              pivotDeployed           = false;
@@ -151,12 +152,12 @@ public class TeleOpMain extends OpMode{
 
         // Temporary read of cam switch
         //telemetry.addData("Cam Switch :", robot.camSwitch.isPressed());
-        //telemetry.addData("Pos: ", liftDeployPos);
+        telemetry.addData("Pos: ", capholdPos);
 
-        //if (gamepad1.dpad_up) liftDeployPos += 0.005;
-        //if (gamepad1.dpad_down) liftDeployPos -= 0.005;
-        //liftDeployPos = Range.clip(liftDeployPos, 0.0, 1.0);
-        //robot.liftDeploy.setPosition(liftDeployPos);
+        if (gamepad1.dpad_up) capholdPos += 0.05;
+        if (gamepad1.dpad_down) capholdPos -= 0.05;
+        capholdPos = Range.clip(capholdPos, 0.0, 1.0);
+        robot.caphold.setPosition(capholdPos);
 
 
         /*

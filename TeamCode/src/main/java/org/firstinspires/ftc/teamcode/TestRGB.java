@@ -118,10 +118,10 @@ public class TestRGB extends LinearOpMode {
       // pass a reference to the hue, saturation, and value array as an argument
       // to the HSVToColor method.
       //relativeLayout.post(new Runnable() {
-        public void run() {
+       // public void run() {
       //    relativeLayout.setBackgroundColor(Color.HSVToColor(0xff, adaValues));
       //  }
-      });
+      //});
 
       telemetry.update();
       idle(); // Always call idle() at the bottom of your while(opModeIsActive()) loop

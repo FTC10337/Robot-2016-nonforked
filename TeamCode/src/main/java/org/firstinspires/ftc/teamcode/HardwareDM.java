@@ -84,6 +84,7 @@ public class HardwareDM
     public Servo beacon = null;
     public Servo pivot = null;
     public Servo liftDeploy = null;
+    public Servo caphold = null;
 
     /* lift limit switch - touch sensor */
     public TouchSensor liftLimit = null;
@@ -132,13 +133,16 @@ public class HardwareDM
     // Servo max min ranges
     public final static double PIVOT_HOME = 0.025;
     public final static double BEACON_HOME = 0.42;
+    public final static double CAPHOLD_HOME = 0.0;
     public final static double LIFT_DEPLOY_HOME = 0.81;          // Tentative -- adjust once hardware mounted
     public final static double PIVOT_MIN_RANGE  = 0.025;
     public final static double PIVOT_MAX_RANGE  = 0.55;
-    public final static double BEACON_MIN_RANGE  = 0.44;
-    public final static double BEACON_MAX_RANGE  = 1.0;
-    public final static double LIFT_DEPLOY_MIN_RANGE = 0.61;     // Tentantive
-    public final static double LIFT_DEPLOY_MAX_RANGE = 0.81;     // Tentantive
+    public final static double BEACON_MIN_RANGE  = 0.19;
+    public final static double BEACON_MAX_RANGE  = 0.82;
+    public final static double LIFT_DEPLOY_MIN_RANGE = 0.61;
+    public final static double LIFT_DEPLOY_MAX_RANGE = 0.81;
+    public final static double CAPHOLD_DEPLOY_MIN_RANGE = 0.0;
+    public final static double CAPHOLD_DEPLOY_MAX_RANGE = 1.0;
 
     // How long to wait for cap lift forks to deploy
     public final static double DEPLOY_WAIT = 1500;  // Wait 1 second for ball pickup to deploy
@@ -219,11 +223,13 @@ public class HardwareDM
         fire = hwMap.crservo.get("fire");
         beacon = hwMap.servo.get("beacon");
         pivot = hwMap.servo.get("pivot");
-        liftDeploy = hwMap.servo.get("lift deploy");        // Ready to turn on when hardware ready
+        liftDeploy = hwMap.servo.get("lift deploy");
+        caphold = hwMap.servo.get("cap hold");
 
         beacon.setPosition(BEACON_HOME);
         pivot.setPosition(PIVOT_HOME);
         liftDeploy.setPosition(LIFT_DEPLOY_HOME);
+        caphold.setPosition(CAPHOLD_HOME);
 
         // Define touch sensors
         liftLimit = hwMap.touchSensor.get("ts");
