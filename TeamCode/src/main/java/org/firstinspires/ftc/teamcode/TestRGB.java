@@ -71,14 +71,14 @@ import com.qualcomm.robotcore.hardware.DigitalChannelController;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 @TeleOp(name = "Test RGB Sensors", group = "Sensor")
-@Disabled                           // Comment this out to add to the opmode list
+//@Disabled                           // Comment this out to add to the opmode list
 public class TestRGB extends LinearOpMode {
 
   HardwareDM robot = new HardwareDM();
 
   @Override
   public void runOpMode() throws InterruptedException {
-    robot.init(hardwareMap);
+    robot.init(hardwareMap, false);
 
       // adaHSV is an array that will hold the hue, saturation, and value information.
       float[] adaHSV = {0F, 0F, 0F};
@@ -110,15 +110,17 @@ public class TestRGB extends LinearOpMode {
       // send the info back to driver station using telemetry function.
       telemetry.addData("Beacon Alpha", robot.beaconColor.alpha());
       telemetry.addData("Beacon Hue", adaHSV[0]);
-        telemetry.addData("Stripe Alpha", robot.stripeColor.alpha());
+      telemetry.addData("Beacon Saturation", adaHSV[1]);
+      telemetry.addData("Beacon Value", adaHSV[2]);
+      //  telemetry.addData("Stripe Alpha", robot.stripeColor.alpha());
 
       // change the background color to match the color detected by the RGB sensor.
       // pass a reference to the hue, saturation, and value array as an argument
       // to the HSVToColor method.
-      relativeLayout.post(new Runnable() {
+      //relativeLayout.post(new Runnable() {
         public void run() {
-          relativeLayout.setBackgroundColor(Color.HSVToColor(0xff, adaValues));
-        }
+      //    relativeLayout.setBackgroundColor(Color.HSVToColor(0xff, adaValues));
+      //  }
       });
 
       telemetry.update();
