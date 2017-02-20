@@ -152,12 +152,12 @@ public class TeleOpMain extends OpMode{
 
         // Temporary read of cam switch
         //telemetry.addData("Cam Switch :", robot.camSwitch.isPressed());
-        telemetry.addData("Pos: ", capholdPos);
+        //telemetry.addData("Pos: ", capholdPos);
 
-        if (gamepad1.dpad_up) capholdPos += 0.05;
-        if (gamepad1.dpad_down) capholdPos -= 0.05;
-        capholdPos = Range.clip(capholdPos, 0.0, 1.0);
-        robot.caphold.setPosition(capholdPos);
+        //if (gamepad1.dpad_up) capholdPos += 0.025;
+        //if (gamepad1.dpad_down) capholdPos -= 0.025;
+        //capholdPos = Range.clip(capholdPos, 0.0, 1.0);
+        //robot.caphold.setPosition(capholdPos);
 
 
         /*
@@ -482,12 +482,18 @@ public class TeleOpMain extends OpMode{
                 }
             }
 
+            // Process for moving cap ball holder. Y deploys cap holder. B releases cap holder.
+            if (gamepad1.y || gamepad2.y) capholdPos = robot.CAPHOLD_DEPLOY_MAX_RANGE;
+            if (gamepad1.b || gamepad2.b) capholdPos = robot.CAPHOLD_DEPLOY_MIN_RANGE;
+
             // For safety verify servo position and then move it
             pivotPos = Range.clip(pivotPos, robot.PIVOT_MIN_RANGE, robot.PIVOT_MAX_RANGE);
             robot.pivot.setPosition(pivotPos);
 
             // And process the lift motor
             if ((gamepad2.right_stick_y < -0.2) && (!robot.liftLimit.isPressed())) {
+                // Move cap ball holder out of the way when lifting
+                capholdPos = robot.CAPHOLD_DEPLOY_MIN_RANGE;
                 // Lift it up
                 robot.liftMotor.setPower(robot.LIFT_UP_SPEED);
                 if (!liftMotorUp) {
