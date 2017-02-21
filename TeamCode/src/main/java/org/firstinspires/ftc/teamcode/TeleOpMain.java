@@ -62,7 +62,7 @@ public class TeleOpMain extends OpMode{
 
     // Drivetrain constants when in Cap Ball Mode
     final double         CAP_DRIVE_SPEED         = -1.0;        // Reverse the direction
-    final double         CAP_TURN_SPEED          = 0.8;         // Slow down the turns a bit
+    final double         CAP_TURN_SPEED          = 1.0;         // Slow down the turns a bit
 
     // Brake mode status on drive train
     boolean              braked                  = false;       // Not in brake mode initially
@@ -152,12 +152,12 @@ public class TeleOpMain extends OpMode{
 
         // Temporary read of cam switch
         //telemetry.addData("Cam Switch :", robot.camSwitch.isPressed());
-        //telemetry.addData("Pos: ", capholdPos);
+        telemetry.addData("Pos: ", capholdPos);
 
-        //if (gamepad1.dpad_up) capholdPos += 0.025;
-        //if (gamepad1.dpad_down) capholdPos -= 0.025;
-        //capholdPos = Range.clip(capholdPos, 0.0, 1.0);
-        //robot.caphold.setPosition(capholdPos);
+        if (gamepad1.dpad_up) capholdPos += 0.01;
+        if (gamepad1.dpad_down) capholdPos -= 0.01;
+        capholdPos = Range.clip(capholdPos, 0.0, 1.0);
+        robot.caphold.setPosition(capholdPos);
 
 
         /*
@@ -483,17 +483,26 @@ public class TeleOpMain extends OpMode{
             }
 
             // Process for moving cap ball holder. Y deploys cap holder. B releases cap holder.
-            if (gamepad1.y || gamepad2.y) capholdPos = robot.CAPHOLD_DEPLOY_MAX_RANGE;
-            if (gamepad1.b || gamepad2.b) capholdPos = robot.CAPHOLD_DEPLOY_MIN_RANGE;
+            if (gamepad1.y || gamepad2.y) {
+                capholdPos = robot.CAPHOLD_DEPLOY_MAX_RANGE;
+                DbgLog.msg("DM10337 -- Cap Hold Deployed");
+            }
+            if (gamepad1.b || gamepad2.b) {
+                capholdPos = robot.CAPHOLD_DEPLOY_MIN_RANGE;
+                DbgLog.msg("DM10337 -- Cap Hold Released");
+            }
 
-            // For safety verify servo position and then move it
+            // For safety verify pivot and cap hold servo positions and then move them
             pivotPos = Range.clip(pivotPos, robot.PIVOT_MIN_RANGE, robot.PIVOT_MAX_RANGE);
             robot.pivot.setPosition(pivotPos);
+            capholdPos = Range.clip(capholdPos, robot.CAPHOLD_DEPLOY_MIN_RANGE, robot.CAPHOLD_DEPLOY_MAX_RANGE);
+            robot.caphold.setPosition(capholdPos);
 
             // And process the lift motor
             if ((gamepad2.right_stick_y < -0.2) && (!robot.liftLimit.isPressed())) {
                 // Move cap ball holder out of the way when lifting
                 capholdPos = robot.CAPHOLD_DEPLOY_MIN_RANGE;
+                DbgLog.msg("DM10337 -- Cap Hold Released");
                 // Lift it up
                 robot.liftMotor.setPower(robot.LIFT_UP_SPEED);
                 if (!liftMotorUp) {
