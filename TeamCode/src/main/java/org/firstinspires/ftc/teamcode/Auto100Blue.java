@@ -80,7 +80,7 @@ public class Auto100Blue extends LinearOpMode {
     static final double     TURN_SPEED              = 0.8;     // Turn speed
 
     static final double     HEADING_THRESHOLD       = 2 ;      // As tight as we can make it with an integer gyro
-    static final double     P_TURN_COEFF            = 0.010;   // Larger is more responsive, but also less accurate
+    static final double     P_TURN_COEFF            = 0.015;   // Larger is more responsive, but also less accurate
     static final double     P_DRIVE_COEFF_1         = 0.06;  // Larger is more responsive, but also less accurate
     static final double     P_DRIVE_COEFF_2         = 0.05;
 
