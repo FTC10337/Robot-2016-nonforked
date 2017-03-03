@@ -134,13 +134,13 @@ public class HardwareDM
     public final static double PIVOT_HOME = 0.025;
     public final static double BEACON_HOME = 0.19;
     public final static double CAPHOLD_HOME = 0.0;
-    public final static double LIFT_DEPLOY_HOME = 0.81;          // Tentative -- adjust once hardware mounted
+    public final static double LIFT_DEPLOY_HOME = 0.27;
     public final static double PIVOT_MIN_RANGE  = 0.025;
     public final static double PIVOT_MAX_RANGE  = 0.55;
     public final static double BEACON_MIN_RANGE  = 0.19;
     public final static double BEACON_MAX_RANGE  = 0.82;
-    public final static double LIFT_DEPLOY_MIN_RANGE = 0.61;
-    public final static double LIFT_DEPLOY_MAX_RANGE = 0.81;
+    public final static double LIFT_DEPLOY_MIN_RANGE = 0.0;
+    public final static double LIFT_DEPLOY_MAX_RANGE = 0.27;
     public final static double CAPHOLD_DEPLOY_MIN_RANGE = 0.0;
     public final static double CAPHOLD_DEPLOY_MAX_RANGE = 0.80;
 

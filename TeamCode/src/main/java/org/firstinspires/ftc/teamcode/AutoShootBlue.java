@@ -119,7 +119,7 @@ public class AutoShootBlue extends LinearOpMode {
         DbgLog.msg("DM10337- Starting Auto Option 2 init.  We are:" + (amIBlue()?"Blue":"Red"));
 
         // Init the robot hardware
-        robot.init(hardwareMap);
+        robot.init(hardwareMap, true);
 
         // And turn on the LED on stripe finder
         robot.stripeColor.enableLed(true);
@@ -136,6 +136,12 @@ public class AutoShootBlue extends LinearOpMode {
         DbgLog.msg("DM10337 -- Drive train encoders reset");
 
         DbgLog.msg("DM10337- Finished Init");
+
+        // Show telemetry for gyro status
+        telemetry.addData("IMU calibrated: ", robot.adaGyro.isSystemCalibrated());
+        telemetry.addData("IMU Gyro calibrated:  ", robot.adaGyro.isGyroCalibrated());
+        telemetry.update();
+
         // Wait for the game to start (driver presses PLAY)
         //waitForStart();
         // Change off of waitForStart() as it appears to be causing delay at start

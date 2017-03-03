@@ -152,12 +152,12 @@ public class TeleOpMain extends OpMode{
 
         // Temporary read of cam switch
         //telemetry.addData("Cam Switch :", robot.camSwitch.isPressed());
-        telemetry.addData("Pos: ", capholdPos);
+        //telemetry.addData("Pos: ", liftDeployPos );
 
-        if (gamepad1.dpad_up) capholdPos += 0.01;
-        if (gamepad1.dpad_down) capholdPos -= 0.01;
-        capholdPos = Range.clip(capholdPos, 0.0, 1.0);
-        robot.caphold.setPosition(capholdPos);
+        //if (gamepad1.dpad_up) liftDeployPos += 0.01;
+        //if (gamepad1.dpad_down) liftDeployPos -= 0.01;
+        //liftDeployPos = Range.clip(liftDeployPos, 0.0, 1.0);
+        //robot.liftDeploy.setPosition(liftDeployPos);
 
 
         /*

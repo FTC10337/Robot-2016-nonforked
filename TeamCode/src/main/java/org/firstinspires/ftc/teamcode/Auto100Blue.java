@@ -222,9 +222,11 @@ public class Auto100Blue extends LinearOpMode {
 
         //waitForSwitch();
 
+        // Correct directional heading if 5 degrees or more out of alignment before
         double headingThreshold = getError(amIBlue()?0:180);
         if (headingThreshold > 4){
             gyroTurn(TURN_SPEED, amIBlue()?0:180, P_TURN_COEFF2);
+            DbgLog.msg ("DM10337 - adjusted heading before find line1 by " + headingThreshold);
         }
 
         //waitForSwitch();
@@ -275,6 +277,8 @@ public class Auto100Blue extends LinearOpMode {
         headingThreshold = getError(amIBlue()?0:180);
         if (headingThreshold > 5){
             gyroTurn(TURN_SPEED, amIBlue()?0:180, P_TURN_COEFF2);
+            DbgLog.msg ("DM10337 - adjusted heading before find line2 by " + headingThreshold);
+
         }
 
         //waitForSwitch();
