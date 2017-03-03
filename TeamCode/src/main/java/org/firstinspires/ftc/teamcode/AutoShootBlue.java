@@ -166,13 +166,13 @@ public class AutoShootBlue extends LinearOpMode {
 
         // Move forward  to line up for shooting particles
         // Use gyro to hold heading
-        encoderDrive(DRIVE_SPEED,  14.0, 3.0, true, 0.0, false);
+        encoderDrive(DRIVE_SPEED,  13.0, 3.0, true, 0.0, false);
 
         // Turn towards the goal
         gyroTurn(TURN_SPEED, amIBlue()?-45.0:45.0);
 
         // Drive to the goal
-        encoderDrive(DRIVE_SPEED, 28.0, 3.0, true, amIBlue()?-45.0:45.0, false);
+        encoderDrive(DRIVE_SPEED, 29.0, 3.0, true, amIBlue()?-45.0:45.0, false);
 
         // Fire the balls
         robot.fire.setPower(1.0);
