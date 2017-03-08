@@ -93,6 +93,16 @@ public class TeleOpMain extends OpMode{
     boolean              intakeOut               = false;    // intake running backward
     boolean              intakeInPressed         = false;    // Is intake button pressed
     boolean              intakeOutPressed        = false;    // Is intake button pressed
+    boolean              intakeTimerOn           = false;
+    boolean              intakeJammedTimerOn     = false;
+    boolean              intakePausedTimerOn     = false;
+    ElapsedTime          intakeTimer             = new ElapsedTime();
+    ElapsedTime          intakeJammedTimer       = new ElapsedTime();
+    ElapsedTime          intakePausedTimer       = new ElapsedTime();
+    int                  previousIntakePos       = 0;
+    int                  currentIntakePos        = 0;
+    int                  difference              = 0;
+
 
     /* Servo current positions */
     double               beaconPos               = robot.BEACON_HOME;
@@ -110,6 +120,7 @@ public class TeleOpMain extends OpMode{
     boolean              liftMotorUp             = false;
     boolean              liftMotorDown           = false;
     ElapsedTime          pickupDeployTimer       = new ElapsedTime();
+
 
 
     /*
@@ -158,6 +169,11 @@ public class TeleOpMain extends OpMode{
         //if (gamepad1.dpad_down) liftDeployPos -= 0.01;
         //liftDeployPos = Range.clip(liftDeployPos, 0.0, 1.0);
         //robot.liftDeploy.setPosition(liftDeployPos);
+
+        telemetry.addData("intakePos: ", previousIntakePos);
+        telemetry.addData("currentPos: ", currentIntakePos);
+        telemetry.addData("difference: ", difference);
+        updateTelemetry(telemetry);
 
 
         /*
@@ -410,7 +426,7 @@ public class TeleOpMain extends OpMode{
             }
         }
 
-        telemetry.addData("Shoot", shootSpeed);
+        //telemetry.addData("Shoot", shootSpeed);
 
 
         /*
@@ -533,23 +549,18 @@ public class TeleOpMain extends OpMode{
             if (!intakeOutPressed) {
                 // Haven't read this button press yet so process it
                 intakeOutPressed = true;
-                if (intakeOut) {
-                    // Already running out so stop it
-                    robot.intake.setPower(0.0);
-                    intakeOut = false;
-                    intakeIn = false;
-                    DbgLog.msg("DM10337 -- Intake stopped from reverse");
-                    telemetry.addData("Intake", "Intake: stopped  ");
-                } else {
-                    // Not already in reverse so set it so
+                // Not already in reverse so set it so
                     robot.intake.setPower(robot.INTAKE_OUT_SPEED);
+                    intakeTimerOn = false;
                     intakeOut = true;
                     intakeIn = false;
+                    intakeJammedTimerOn = false;
+                    intakePausedTimerOn = false;
                     DbgLog.msg("DM10337 -- Intake start reverse");
                     telemetry.addData("Intake", "Intake: reverse  ");
                 }
             }
-        } else {
+        else {
             // Intake reverse button is not pressed
             intakeOutPressed = false;
         }
@@ -558,23 +569,19 @@ public class TeleOpMain extends OpMode{
             if (!intakeInPressed) {
                 // Haven't read this button press yet so process it
                 intakeInPressed = true;
-                if (intakeIn) {
-                    // Already running out so stop it
-                    robot.intake.setPower(0.0);
-                    intakeOut = false;
-                    intakeIn = false;
-                    DbgLog.msg("DM10337 -- Intake stopped from forward");
-                    telemetry.addData("Intake", "Intake: stopped  ");
                 } else {
                     // Not already in forward so set it so
                     robot.intake.setPower(robot.INTAKE_IN_SPEED);
+                    intakeTimerOn = false;
                     intakeOut = false;
                     intakeIn = true;
+                    intakeJammedTimerOn = false;
+                    intakePausedTimerOn = false;
                     DbgLog.msg("DM10337 -- Intake start forward");
                     telemetry.addData("Intake", "Intake: forward  ");
                 }
             }
-        } else {
+        else {
             // Intake reverse button is not pressed
             intakeInPressed = false;
         }
@@ -583,11 +590,58 @@ public class TeleOpMain extends OpMode{
             // Emergency stop on intake
             intakeIn = false;
             intakeOut = false;
+            intakeTimerOn = false;
+            intakeJammedTimerOn = false;
             robot.intake.setPower(0.0);
         }
 
-        // Finally update the telemetry for this cycle
-        //telemetry.addData("Range:  ", robot.rangeSensor.getDistance(DistanceUnit.CM));
+        // Turn intake timer on at the start of intaking
+        if (intakeIn && !intakeTimerOn) {
+            previousIntakePos = robot.intake.getCurrentPosition();
+            intakeTimerOn = true;
+            intakeTimer.reset();
+        }
+
+        // Check rotation of intake with encoders after 350 ms
+        if (intakeIn && intakeTimerOn && intakeTimer.milliseconds() > 350) {
+            intakeTimerOn = false;
+            currentIntakePos = robot.intake.getCurrentPosition();
+            difference = Math.abs(Math.abs(previousIntakePos) - Math.abs(currentIntakePos));
+            previousIntakePos = robot.intake.getCurrentPosition();
+
+            // If intake has slowed down to near stall or stalled due to jam, reverse intake and start timer for clearing jam
+            if (difference < 350) {
+                robot.intake.setPower(robot.INTAKE_OUT_SPEED);
+                intakeOut = true;
+                intakeIn = false;
+                intakePausedTimerOn = true;
+                intakePausedTimer.reset();
+                DbgLog.msg("DM10337 -- Intake JAMMED! Reversing! Difference: " + difference);
+            }
+
+        }
+
+        // Stop intake before reversing direction rotation.
+
+        if (intakeOut && intakePausedTimerOn && intakePausedTimer.milliseconds() > 350) {
+            robot.intake.setPower(0.0);
+            intakeOut = false;
+            intakeIn = false;
+            intakeJammedTimerOn = true;
+            intakeJammedTimer.reset();
+            DbgLog.msg("DM10337 -- Intake JAMMED! Done waiting");
+
+        }
+
+        // Clearing jam complete, so return to intaking
+        if (!intakeOut && !intakeIn && intakeJammedTimerOn && intakeJammedTimer.milliseconds() > 250) {
+            robot.intake.setPower(robot.INTAKE_IN_SPEED);
+            intakeOut = false;
+            intakeIn = true;
+            intakeJammedTimerOn = false;
+            DbgLog.msg("DM10337 -- Intake done reversing. Returning to intake. Difference: " + difference);
+        }
+
         updateTelemetry(telemetry);
 
 
