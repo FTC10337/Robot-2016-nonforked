@@ -114,6 +114,7 @@ public class HardwareDM
     // Lift motor speeds
     public final static double LIFT_UP_SPEED = 1.0;
     public final static double LIFT_DOWN_SPEED = -0.2;
+    public final static double LIFT_DOWN_SPEED_FAST = -0.50;
 
     // Intake motor speeds
     public final static double INTAKE_IN_SPEED = 1.0;
@@ -262,7 +263,7 @@ public class HardwareDM
         setDriveDirection(DcMotor.Direction.REVERSE, DcMotor.Direction.FORWARD);
         lShoot.setDirection(DcMotor.Direction.REVERSE);
         rShoot.setDirection(DcMotor.Direction.FORWARD);
-        intake.setDirection(DcMotor.Direction.REVERSE);
+        intake.setDirection(DcMotor.Direction.FORWARD);
         liftMotor.setDirection(DcMotorSimple.Direction.FORWARD);
 
         // Set motors to float mode to protect gearboxes from shock load

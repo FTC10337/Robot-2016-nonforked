@@ -527,7 +527,7 @@ public class TeleOpMain extends OpMode{
                     liftMotorDown = false;
                     DbgLog.msg("DM10337 -- Cap Ball Lift moving up");
                 }
-            } else if (gamepad2.right_stick_y > 0.2) {
+            } else if (gamepad2.right_stick_y > 0.2 && !gamepad2.left_bumper) {
                 // Or drop it down
                 robot.liftMotor.setPower(robot.LIFT_DOWN_SPEED);
                 if (!liftMotorDown) {
@@ -536,6 +536,17 @@ public class TeleOpMain extends OpMode{
                     liftMotorUp = false;
                     DbgLog.msg("DM10337 -- Cap Ball Lift moving down");
                 }
+
+            } else if (gamepad2.right_stick_y > 0.2 && gamepad2.left_bumper) {
+                // Or drop it down
+                robot.liftMotor.setPower(robot.LIFT_DOWN_SPEED_FAST);
+                if (!liftMotorDown) {
+                    // We weren't moving down before so log event
+                    liftMotorDown = true;
+                    liftMotorUp = false;
+                    DbgLog.msg("DM10337 -- Cap Ball Lift moving down FAST");
+                }
+
             } else robot.liftMotor.setPower(0.0);
 
         }
@@ -557,7 +568,6 @@ public class TeleOpMain extends OpMode{
                     intakeJammedTimerOn = false;
                     intakePausedTimerOn = false;
                     DbgLog.msg("DM10337 -- Intake start reverse");
-                    telemetry.addData("Intake", "Intake: reverse  ");
                 }
             }
         else {
@@ -578,7 +588,6 @@ public class TeleOpMain extends OpMode{
                     intakeJammedTimerOn = false;
                     intakePausedTimerOn = false;
                     DbgLog.msg("DM10337 -- Intake start forward");
-                    telemetry.addData("Intake", "Intake: forward  ");
                 }
             }
         else {
@@ -587,12 +596,13 @@ public class TeleOpMain extends OpMode{
         }
 
         if (gamepad1.a) {
-            // Emergency stop on intake
+            // Stop intake
             intakeIn = false;
             intakeOut = false;
             intakeTimerOn = false;
             intakeJammedTimerOn = false;
             robot.intake.setPower(0.0);
+            DbgLog.msg("DM10337 intake stopped");
         }
 
         // Turn intake timer on at the start of intaking

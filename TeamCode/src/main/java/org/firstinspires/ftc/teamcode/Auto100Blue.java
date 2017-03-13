@@ -200,31 +200,36 @@ public class Auto100Blue extends LinearOpMode {
         robot.lShoot.setPower(0.0);
         robot.rShoot.setPower(0.0);
 
+        // Reverse the intake to keep any particles or cap balls out of our way
+        robot.intake.setPower(-1.0);
+
         // Drive towards the beacon wall
         // Use gyro to hold heading
         // Distance is the "inside" of the turn distance
         encoderDrive(DRIVE_SPEED, amIBlue()?66:64.5, 5.0,
                 true, amIBlue()?-42.0:42.0, false);
 
+        // Stop the intake
+        robot.intake.setPower(0.0);
+
          //waitForSwitch();
 
         // Turn parallel to beacon wall using gyro
-        // Had to tweak the red direction off of 180 to correct alignment error after turn
         gyroTurn(TURN_SPEED, amIBlue()?0.0:180.0, amIBlue()?P_TURN_COEFF:P_TURN_COEEF_RED);
 
         //waitForSwitch();
 
         // Move slowly to approach 1st beacon -- Slow allows us to be more accurate w/ alignment
         // Autocorrects any heading errors while driving
-        encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?-15.0:26.0, 5.0, true,
+        encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?-15.0:28.0, 5.0, true,
                 amIBlue()?0.0:180.0, false, true, WALL_DISTANCE);
 
 
         //waitForSwitch();
 
-        // Correct directional heading if 5 degrees or more out of alignment before
+        // If heading is more than 5 degrees from target heading after wall follow, robot turns to correct heading
         double headingThreshold = getError(amIBlue()?0:180);
-        if (headingThreshold > 4){
+        if (headingThreshold > 2){
             gyroTurn(TURN_SPEED, amIBlue()?0:180, P_TURN_COEFF2);
             DbgLog.msg ("DM10337 - adjusted heading before find line1 by " + headingThreshold);
         }
@@ -232,7 +237,7 @@ public class Auto100Blue extends LinearOpMode {
         //waitForSwitch();
 
         // Use line finder to align to white line
-        findLine(amIBlue()?-0.10:0.10, 3.0);
+        findLine(amIBlue()?-0.10:0.10, 5.0);
 
         //waitForSwitch();
 
@@ -243,27 +248,26 @@ public class Auto100Blue extends LinearOpMode {
         beacon = beaconColor();
         if (beacon == 1) {
             // We see blue
-            distCorrection = amIBlue()?1.625:-2.25;
+            distCorrection = amIBlue()?4.5:-4.5;
         } else if (beacon == -1) {
             // We see red
-            distCorrection = amIBlue()?-1.5:1.25;
+            distCorrection = amIBlue()?-4.5:4.5;
         } else {
             // We see neither
             distCorrection = 0;
         }
 
         if (beacon != 0) {
-            // We saw a beacon color so move to align beacon pusher
-            // We turn by +/- 4 degrees to account for curved front of beacon
-            encoderDrive(DRIVE_SPEED_SLOW, distCorrection, 2.5, true,
+            // We saw the beacon color so press the center of the beacon
+            robot.beacon.setPosition(robot.BEACON_MAX_RANGE);
+            //waitForSwitch();
+            encoderDrive(0.2, distCorrection, 2.5, true,
                     amIBlue()?(0):(180), true);
 
+            // Return beacon arm back to home position
             //waitForSwitch();
-
-            // And press the beacon button
-            robot.beacon.setPosition(robot.BEACON_MAX_RANGE);
-            sleep (1500);
             robot.beacon.setPosition((robot.BEACON_HOME));
+            sleep(100);
 
         }
 
@@ -274,8 +278,9 @@ public class Auto100Blue extends LinearOpMode {
 
         //waitForSwitch();
 
+        // If heading is more than 5 degrees from target heading after wall follow, robot turns to correct heading
         headingThreshold = getError(amIBlue()?0:180);
-        if (headingThreshold > 5){
+        if (headingThreshold > 2){
             gyroTurn(TURN_SPEED, amIBlue()?0:180, P_TURN_COEFF2);
             DbgLog.msg ("DM10337 - adjusted heading before find line2 by " + headingThreshold);
 
@@ -284,7 +289,7 @@ public class Auto100Blue extends LinearOpMode {
         //waitForSwitch();
 
         // Find the 2nd white line
-        findLine(amIBlue()?0.10:-0.10, 3.0);
+        findLine(amIBlue()?0.10:-0.10, 5.0);
 
         // wait for color sensor
         sleep(1000);
@@ -295,28 +300,26 @@ public class Auto100Blue extends LinearOpMode {
         beacon = beaconColor();
         if (beacon == 1) {
             // I see blue
-            distCorrection = amIBlue()?1.875:-1.875;
+            distCorrection = amIBlue()?4.5:-4.5;
         } else if (beacon == -1) {
             // I see red
-            distCorrection = amIBlue()?-1.675:2.0;
+            distCorrection = amIBlue()?-4.5:4.5;
         } else {
             // I see neither
             distCorrection = 0;
         }
 
         if (beacon != 0) {
-            // We saw a beacon color so move to align beacon pusher
-            // Adjust by +/- 4 degrees to account for curved front of beacon
-            encoderDrive(DRIVE_SPEED_SLOW, distCorrection, 2.5, true,
+            // We saw the beacon color so press the center of the beacon
+            robot.beacon.setPosition(robot.BEACON_MAX_RANGE);
+            //waitForSwitch();
+            encoderDrive(0.2, distCorrection, 2.5, true,
                     amIBlue()?(0):(180), true);
 
+            // Return beacon arm back to home position
             //waitForSwitch();
-
-            // And press the beacon button
-            robot.beacon.setPosition(robot.BEACON_MAX_RANGE);
-            sleep (1500);
             robot.beacon.setPosition((robot.BEACON_HOME));
-
+            sleep(100);
         }
 
         if (!amIBlue()){
@@ -339,7 +342,7 @@ public class Auto100Blue extends LinearOpMode {
         // Note that we are turning while moving to save time at the expense of accuracy
         // Distances adjusted to "inside" of requested turn
         encoderDrive(1.0, amIBlue()?-72.0:58.0, 10.0, true,
-                angleAdjust + (amIBlue()?-52.5:245), false);
+                angleAdjust + (amIBlue()?-56.5:249), false);
 
 
         // And stop
