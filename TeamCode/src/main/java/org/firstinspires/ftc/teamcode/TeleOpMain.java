@@ -121,6 +121,15 @@ public class TeleOpMain extends OpMode{
     boolean              liftMotorDown           = false;
     ElapsedTime          pickupDeployTimer       = new ElapsedTime();
 
+    /* Conditions for setting drive train back to normal after cap ball is dropped in vortex
+
+     */
+
+    boolean              liftCap                 = false;
+    boolean              capBallDropped          = false;
+    boolean              endGameDrive            = false;
+
+
 
 
     /*
@@ -189,7 +198,7 @@ public class TeleOpMain extends OpMode{
         direction = smoothPowerCurve(deadzone(direction,0.10));
 
         // If we deployed into Cap Ball mode the robot drives differently
-        if (pickupDeployed) {
+        if (pickupDeployed && !endGameDrive) {
             // Slow down the turns since we have a cap ball -- and reverse which is front of robot
             throttle = CAP_DRIVE_SPEED * throttle;
             direction = CAP_TURN_SPEED * direction;
@@ -426,7 +435,7 @@ public class TeleOpMain extends OpMode{
             }
         }
 
-        //telemetry.addData("Shoot", shootSpeed);
+        telemetry.addData("Shoot", shootSpeed);
 
 
         /*
@@ -485,6 +494,9 @@ public class TeleOpMain extends OpMode{
             if (gamepad1.left_bumper) {
                 // Pressed stick so pivot the lift down
                 pivotPos = robot.PIVOT_MAX_RANGE;
+
+                // lift has been raised, so pivot forward must be capping cap ball.
+                if (liftCap) capBallDropped = true;
                 if (!pivotDeployed) {
                     pivotDeployed = true;
                     DbgLog.msg("DM10337 -- Pivoting the Lift Down");
@@ -518,6 +530,7 @@ public class TeleOpMain extends OpMode{
             if ((gamepad2.right_stick_y < -0.2) && (!robot.liftLimit.isPressed())) {
                 // Move cap ball holder out of the way when lifting
                 capholdPos = robot.CAPHOLD_DEPLOY_MIN_RANGE;
+                liftCap = true;
                 DbgLog.msg("DM10337 -- Cap Hold Released");
                 // Lift it up
                 robot.liftMotor.setPower(robot.LIFT_UP_SPEED);
@@ -548,6 +561,8 @@ public class TeleOpMain extends OpMode{
                 }
 
             } else robot.liftMotor.setPower(0.0);
+
+            if (gamepad1.dpad_down && capBallDropped) endGameDrive = true;
 
         }
 

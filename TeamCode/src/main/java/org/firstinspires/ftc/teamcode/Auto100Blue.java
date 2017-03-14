@@ -206,7 +206,7 @@ public class Auto100Blue extends LinearOpMode {
         // Drive towards the beacon wall
         // Use gyro to hold heading
         // Distance is the "inside" of the turn distance
-        encoderDrive(DRIVE_SPEED, amIBlue()?66:64.5, 5.0,
+        encoderDrive(DRIVE_SPEED, amIBlue()?66:62.5, 5.0,
                 true, amIBlue()?-42.0:42.0, false);
 
         // Stop the intake
@@ -240,7 +240,6 @@ public class Auto100Blue extends LinearOpMode {
         findLine(amIBlue()?-0.10:0.10, 5.0);
 
         //waitForSwitch();
-
         // Wait for beacon color sensor
         sleep(1000);
 
