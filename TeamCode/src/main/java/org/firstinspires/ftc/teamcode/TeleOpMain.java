@@ -179,9 +179,11 @@ public class TeleOpMain extends OpMode{
         //liftDeployPos = Range.clip(liftDeployPos, 0.0, 1.0);
         //robot.liftDeploy.setPosition(liftDeployPos);
 
-        telemetry.addData("intakePos: ", previousIntakePos);
-        telemetry.addData("currentPos: ", currentIntakePos);
-        telemetry.addData("difference: ", difference);
+        //telemetry.addData("intakePos: ", previousIntakePos);
+        //telemetry.addData("currentPos: ", currentIntakePos);
+        //telemetry.addData("difference: ", difference);
+        telemetry.addData("Shoot", shootSpeed);
+        telemetry.addData("Cam: ", fireCamHot);
         updateTelemetry(telemetry);
 
 
@@ -435,7 +437,7 @@ public class TeleOpMain extends OpMode{
             }
         }
 
-        telemetry.addData("Shoot", shootSpeed);
+
 
 
         /*
@@ -667,7 +669,7 @@ public class TeleOpMain extends OpMode{
             DbgLog.msg("DM10337 -- Intake done reversing. Returning to intake. Difference: " + difference);
         }
 
-        updateTelemetry(telemetry);
+
 
 
     }
