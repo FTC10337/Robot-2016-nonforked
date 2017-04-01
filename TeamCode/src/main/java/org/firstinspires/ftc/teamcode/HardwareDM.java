@@ -145,7 +145,7 @@ public class HardwareDM
     public final static double CAPHOLD_DEPLOY_MIN_RANGE = 0.0;
     public final static double CAPHOLD_DEPLOY_MAX_RANGE = 0.80;
 
-    // How long to wait for cap lift forks to deploy
+        // How long to wait for cap lift forks to deploy
     public final static double DEPLOY_WAIT = 500;  // Wait 1 second for ball pickup to deploy
 
     /* Local OpMode members. */

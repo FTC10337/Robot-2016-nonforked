@@ -81,12 +81,13 @@ public class TeleOpMain extends OpMode{
     boolean              fireCamPaused           = false;    // Currently in autopause mode
     ElapsedTime          fireCamTimer            = new ElapsedTime();
     ElapsedTime          fireCamPauseTimer       = new ElapsedTime();
-    final double         FIRE_CAM_MIN_TIME       = 050;      // milliseconds
-    final double         FIRE_CAM_PAUSE_MIN      = 100;      // milliseconds
-    final double         FIRE_CAM_MAX_TIME       = 300;      // milliseconds
+    final double         FIRE_CAM_MIN_TIME       = 0;      // milliseconds
+    final double         FIRE_CAM_PAUSE_MIN      = 0;      // milliseconds
+    final double         FIRE_CAM_MAX_TIME       = 100;      // milliseconds
     final double         FIRE_CAM_ERR_TIME       = 1500;     // milliseconds
-    final double         FIRE_CAM_PAUSE_TIME     = 100;      // milliseconds
+    final double         FIRE_CAM_PAUSE_TIME     = 300;      // milliseconds
 
+    boolean camIsPressedTrue = false;
 
     // Keep track of the status of the intake
     boolean              intakeIn                = false;    // intake running forward
@@ -128,6 +129,8 @@ public class TeleOpMain extends OpMode{
     boolean              liftCap                 = false;
     boolean              capBallDropped          = false;
     boolean              endGameDrive            = false;
+
+    double shotsMade = 0;
 
 
 
@@ -182,10 +185,18 @@ public class TeleOpMain extends OpMode{
         //telemetry.addData("intakePos: ", previousIntakePos);
         //telemetry.addData("currentPos: ", currentIntakePos);
         //telemetry.addData("difference: ", difference);
-        telemetry.addData("Shoot", shootSpeed);
-        telemetry.addData("Cam: ", fireCamHot);
+        //telemetry.addData("Shoot: ", shootSpeed);
+        //telemetry.addData("Cam: ", fireCamHot);
+        telemetry.addData("Shots: ", shotsMade);
         updateTelemetry(telemetry);
 
+
+        if (robot.camSwitch.isPressed() && !camIsPressedTrue) {
+                shotsMade = shotsMade + 1.0;
+                DbgLog.msg("DM10337switch -- limit switch pressed! Shots: " + shotsMade);
+                camIsPressedTrue = true;
+            }
+        if (!robot.camSwitch.isPressed()) camIsPressedTrue = false;
 
         /*
            Driving code -- read joysticks and drive the motors
@@ -295,7 +306,7 @@ public class TeleOpMain extends OpMode{
              * 3>  We are running, and in targeted stop zone so we will stop here
              * 4>  We are running, and it appears the sensor switch isn't working so just stop here
              * 5>  We are running, and past "point of no return" so go 1 more revolution
-             * We also have a catchall else in case of some error conditon which forces stop.
+             * We also have a catchall else in case of some error condition which forces stop.
              *
              */
 
@@ -629,15 +640,15 @@ public class TeleOpMain extends OpMode{
             intakeTimer.reset();
         }
 
-        // Check rotation of intake with encoders after 350 ms
-        if (intakeIn && intakeTimerOn && intakeTimer.milliseconds() > 350) {
+        // Check rotation of intake with encoders after 1750 ms
+        if (intakeIn && intakeTimerOn && intakeTimer.milliseconds() > 1050) {
             intakeTimerOn = false;
             currentIntakePos = robot.intake.getCurrentPosition();
             difference = Math.abs(Math.abs(previousIntakePos) - Math.abs(currentIntakePos));
             previousIntakePos = robot.intake.getCurrentPosition();
 
             // If intake has slowed down to near stall or stalled due to jam, reverse intake and start timer for clearing jam
-            if (difference < 350) {
+            if (difference < 1050) {
                 robot.intake.setPower(robot.INTAKE_OUT_SPEED);
                 intakeOut = true;
                 intakeIn = false;
@@ -752,8 +763,7 @@ public class TeleOpMain extends OpMode{
     /**
      * Start the firing cam
      */
-    public void startFireCam() {
-        robot.fire.setPower(1.0);
+    public void startFireCam() { robot.fire.setPower(1.0);
     }
 
     /**
