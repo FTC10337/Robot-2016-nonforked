@@ -82,10 +82,10 @@ public class TeleOpMain extends OpMode{
     ElapsedTime          fireCamTimer            = new ElapsedTime();
     ElapsedTime          fireCamPauseTimer       = new ElapsedTime();
     final double         FIRE_CAM_MIN_TIME       = 0;      // milliseconds
-    final double         FIRE_CAM_PAUSE_MIN      = 0;      // milliseconds
+    final double         FIRE_CAM_PAUSE_MIN      = 50;      // milliseconds
     final double         FIRE_CAM_MAX_TIME       = 100;      // milliseconds
     final double         FIRE_CAM_ERR_TIME       = 1500;     // milliseconds
-    final double         FIRE_CAM_PAUSE_TIME     = 300;      // milliseconds
+    final double         FIRE_CAM_PAUSE_TIME     = 50;      // milliseconds
 
     boolean camIsPressedTrue = false;
 
@@ -379,9 +379,10 @@ public class TeleOpMain extends OpMode{
                     fireCamPaused = false;
                     fireCamHot = true;
                 }
+
             } else if (!fireCamPauseDone && fireCamHot &&
                     (fireCamTimer.milliseconds() >= FIRE_CAM_PAUSE_MIN) &&
-                    (fireCamTimer.milliseconds() <= FIRE_CAM_MAX_TIME)) {
+                   (fireCamTimer.milliseconds() <= FIRE_CAM_MAX_TIME)) {
                     // We are in the potential time window to insert a new auto pause
                     stopFireCam();
                     fireCamPauseDone = true;
