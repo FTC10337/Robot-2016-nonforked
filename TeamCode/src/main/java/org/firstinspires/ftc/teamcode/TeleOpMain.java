@@ -82,7 +82,7 @@ public class TeleOpMain extends OpMode{
     ElapsedTime          fireCamTimer            = new ElapsedTime();
     ElapsedTime          fireCamPauseTimer       = new ElapsedTime();
     final double         FIRE_CAM_MIN_TIME       = 0;      // milliseconds
-    final double         FIRE_CAM_PAUSE_MIN      = 50;      // milliseconds
+    final double         FIRE_CAM_PAUSE_MIN      = 0;      // milliseconds
     final double         FIRE_CAM_MAX_TIME       = 100;      // milliseconds
     final double         FIRE_CAM_ERR_TIME       = 1500;     // milliseconds
     final double         FIRE_CAM_PAUSE_TIME     = 50;      // milliseconds
@@ -631,7 +631,7 @@ public class TeleOpMain extends OpMode{
             intakeTimerOn = false;
             intakeJammedTimerOn = false;
             robot.intake.setPower(0.0);
-            DbgLog.msg("DM10337 intake stopped");
+            //DbgLog.msg("DM10337 intake stopped");
         }
 
         // Turn intake timer on at the start of intaking

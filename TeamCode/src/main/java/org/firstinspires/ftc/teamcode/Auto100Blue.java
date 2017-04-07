@@ -88,7 +88,8 @@ public class Auto100Blue extends LinearOpMode {
     // Coeff for doing range sensor driving -- 1.25 degrees per CM off
     static final double     P_DRIVE_COEFF_3         = 1.25;
     static final double     RANGE_THRESHOLD         = 1.0;  // OK at +/- 1cm
-    static final double     WALL_DISTANCE           = 12.0; // 12 cm from wall for beacons
+    static final double     WALL_DISTANCE_1           = 12.0; // 12 cm from wall for beacons
+    static final double     WALL_DISTANCE_2           = 11.0;
 
     // White line finder thresholds
     static final double     WHITE_THRESHOLD         = 2.0;      // Line finder
@@ -180,6 +181,7 @@ public class Auto100Blue extends LinearOpMode {
 
         DbgLog.msg("DM10337 - Gyro bias set to " + headingBias);
 
+
         // Spin up the shooter
         robot.lShoot.setPower(robot.SHOOT_DEFAULT);
         robot.rShoot.setPower(robot.SHOOT_DEFAULT);
@@ -189,9 +191,7 @@ public class Auto100Blue extends LinearOpMode {
         encoderDrive(DRIVE_SPEED,  25.0, 5.0, true, 0.0, false);
 
         // Fire the balls
-        robot.fire.setPower(.15);
-
-        sleep (1750);
+        camDrive(1.0, 2, 50, 1500);
 
         // Turn towards the beacons using gyro
         gyroTurn(TURN_SPEED, amIBlue()?-85.0:85.0, P_TURN_COEFF);
@@ -223,7 +223,7 @@ public class Auto100Blue extends LinearOpMode {
         // Move slowly to approach 1st beacon -- Slow allows us to be more accurate w/ alignment
         // Autocorrects any heading errors while driving
         encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?-15.0:35, 5.0, true,
-                amIBlue()?0.0:180.0, false, true, WALL_DISTANCE);
+                amIBlue()?0.0:180.0, false, true, amIBlue()?WALL_DISTANCE_1:WALL_DISTANCE_2);
 
 
         //waitForSwitch();
@@ -242,7 +242,7 @@ public class Auto100Blue extends LinearOpMode {
 
         if (headingThreshold > 2){
             gyroTurn(TURN_SPEED, amIBlue()?0:180, P_TURN_COEFF2);
-            DbgLog.msg ("DM10337 - adjusted heading before find line1 by " + headingThreshold);
+            DbgLog.msg ("DM10337 - adjusted heading after find line1 by " + headingThreshold);
         }
         //waitForSwitch();
         // Wait for beacon color sensor
@@ -254,7 +254,7 @@ public class Auto100Blue extends LinearOpMode {
             distCorrection = amIBlue()?1.2:-1.5;
         } else if (beacon == -1) {
             // We see red
-            distCorrection = amIBlue()?-1.1:1.0;
+            distCorrection = amIBlue()?-1.45:1.0;
         } else {
             // We see neither
             distCorrection = 0;
@@ -291,7 +291,7 @@ public class Auto100Blue extends LinearOpMode {
         // Drive to the 2nd beacon.  Tweaked Red heading to correct alignment errors.
         // Use rangefinder correction to get us to 10cm from all
         encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?42.0 - distCorrection - distCorrection_2:-44.0 - distCorrection - distCorrection_2, 4.0,
-                true, amIBlue()?0.0:180.0, false, true, WALL_DISTANCE);
+                true, amIBlue()?0.0:180.0, false, true, WALL_DISTANCE_1);
 
         //waitForSwitch();
 
@@ -310,7 +310,7 @@ public class Auto100Blue extends LinearOpMode {
 
         if (headingThreshold > 2){
             gyroTurn(TURN_SPEED, amIBlue()?0:180, P_TURN_COEFF2);
-            DbgLog.msg ("DM10337 - adjusted heading before find line1 by " + headingThreshold);
+            DbgLog.msg ("DM10337 - adjusted heading after find line2 by " + headingThreshold);
         }
         // wait for color sensor
         sleep(1000);
@@ -324,7 +324,7 @@ public class Auto100Blue extends LinearOpMode {
             distCorrection = amIBlue()?1.2:-1.5;
         } else if (beacon == -1) {
             // I see red
-            distCorrection = amIBlue()?-1.0:1.1;
+            distCorrection = amIBlue()?-1.25:1.1;
         } else {
             // I see neither
             distCorrection = 0;
@@ -839,7 +839,39 @@ public class Auto100Blue extends LinearOpMode {
         return angles.firstAngle - headingBias;
     }
 
+    public void camDrive (double speed, double shots, long pause, double timeout) throws InterruptedException {
+         ElapsedTime     pauseTime = new ElapsedTime();
 
+        runtime.reset();
+
+        robot.fire.setPower(speed);
+        double totalShots = 0;
+        boolean camSwitchPressed = false;
+        boolean paused = false;
+
+        while (opModeIsActive() && totalShots < shots&& runtime.milliseconds() < timeout) {
+            // run cam until limit switch is pressed
+            if (!paused && robot.camSwitch.isPressed() && !camSwitchPressed && runtime.milliseconds() > 250) {
+                totalShots += 1.0;
+                camSwitchPressed = true;
+                robot.fire.setPower(0.0);
+                pauseTime.reset();
+                paused = true;
+                robot.fire.setPower(0.0);
+                telemetry.addData("Shots made: ", totalShots);
+                telemetry.update();
+            } else if (paused && pauseTime.milliseconds() > pause) {
+                paused = false;
+                robot.fire.setPower(speed);
+
+            }
+            if (!robot.camSwitch.isPressed() && pauseTime.milliseconds() > pause + 100){
+                camSwitchPressed = false;
+            }
+            idle();
+        }
+        robot.fire.setPower(0.0);
+    }
     /**
      * Always returns true as we are blue.
      *
