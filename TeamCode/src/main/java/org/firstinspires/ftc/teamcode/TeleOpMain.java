@@ -132,6 +132,16 @@ public class TeleOpMain extends OpMode{
 
     double shotsMade = 0;
 
+    // New shooter status variables
+    boolean camPaused = false;
+    boolean camSwitchPressed = false;
+    boolean camStopped = false;
+    boolean camReverse = false;
+    boolean camReverseStop = false;
+    public double REVERSE_TIME = 100;
+    ElapsedTime pausedTime = new ElapsedTime();
+    ElapsedTime camReverseTimer = new ElapsedTime();
+
 
 
 
@@ -157,6 +167,17 @@ public class TeleOpMain extends OpMode{
      */
     @Override
     public void init_loop() {
+
+        float g1_right_trigger = gamepad1.right_trigger;
+        float g1_left_trigger = gamepad1.left_trigger;
+        float g2_right_trigger = gamepad2.right_trigger;
+        float g2_left_trigger = gamepad2.left_trigger;
+        telemetry.addData("G1 Left Trigger: ", g1_left_trigger);
+        telemetry.addData("G1 Right Trigger: ", g1_right_trigger);
+        telemetry.addData("G2 Left Trigger: ", g2_left_trigger);
+        telemetry.addData("G2 Right Trigger: ", g2_right_trigger);
+        telemetry.update();
+
     }
 
     /*
@@ -290,119 +311,63 @@ public class TeleOpMain extends OpMode{
             Code for the shooter firing cam
          */
 
-        // Check the sensor switch and time mark it as pressed
-        // Also flag that no pause done this cycle
-        if (robot.camSwitch.isPressed()) {  // Need to check against the hardware wiring of switch!
-            fireCamTimer.reset();           // Keep track of time since we hit switch
-            fireCamPauseDone = false;       // Made a full revolution so may need to pause again
+        if (gamepad2.right_trigger > 0.25 && !camPaused && pausedTime.milliseconds() > 50) {
+            robot.fire.setPower(1.0);
+            camStopped = false;
+
+        } else if (gamepad2.right_trigger > 0.25 && camPaused) {
+            robot.fire.setPower(0.0);
+            camPaused = false;
+            pausedTime.reset();
         }
 
-        // Check the gamepad inputs and process start/stop
-        if (gamepad2.right_trigger <= 0.2) {
-            /** This block of code process the conditions when not pressing the fire button
-             * There are 5 conditions we have to account for
-             * 1>  We are "auto paused" -- in which case its OK to just stop
-             * 2>  We are running, but not yet in our targeted stop zone
-             * 3>  We are running, and in targeted stop zone so we will stop here
-             * 4>  We are running, and it appears the sensor switch isn't working so just stop here
-             * 5>  We are running, and past "point of no return" so go 1 more revolution
-             * We also have a catchall else in case of some error condition which forces stop.
-             *
-             */
 
-            // If we were running, look at timer to see if we are in the "stop here window"
-            if (fireCamPaused) {
-                // Already paused so we can just go full stop
-                stopFireCam();
-                fireCamPaused = false;
-                fireCamHot = false;
-                fireCamPauseDone = true;
-                DbgLog.msg("DM10337 -- Stopped while in auto pause mode.");
-            } else if (fireCamHot &&
-                    (fireCamTimer.milliseconds() < FIRE_CAM_MIN_TIME)) {
-                // Requesting stop but not at optimal stop zone yet
-                // Keep going but log the event if first time detected
-                if (!fireCamStopRequested) {
-                    DbgLog.msg("DM10337 -- Fire cam stop requested before reaching target zone.  Keep going.");
-                }
-            } else if (fireCamHot &&
-                    (fireCamTimer.milliseconds() >= FIRE_CAM_MIN_TIME) &&
-                    (fireCamTimer.milliseconds() <= FIRE_CAM_MAX_TIME)) {
-                // We are running and in our desired range to stop
-                stopFireCam();
-                fireCamPaused = false;
-                fireCamHot = false;
-                fireCamPauseDone = true;
-                DbgLog.msg("DM10337 -- Stopping firing cam in target zone");
-            } else if (fireCamHot &&
-                    (fireCamTimer.milliseconds() >= FIRE_CAM_ERR_TIME)) {
-                // We are running and didn't see a sensor timer reset
-                // Sensor switch probably not working so just stop here
-                stopFireCam();
-                fireCamPaused = false;
-                fireCamHot = false;
-                fireCamPauseDone = true;
-                DbgLog.msg("DM10337 -- Stopping firing cam -- switch not working");
-            } else if (fireCamTimer.milliseconds() >= FIRE_CAM_MAX_TIME) {
-                // We are past the point of no return.  Keep going another round
-                if (!fireCamStopRequested) {
-                    // First time we see this event so log
-                    DbgLog.msg("DM10337 -- Requested firing cam stop but too late.  Keep going.");
-                }
-            } else {
-                // Probably already stopped -- but just in case force stop it again
-                stopFireCam();
-                if (fireCamHot) {
-                    DbgLog.msg("DM10337 -- Firing Cam stopped for other reason");
-
-                }
-                fireCamPaused = false;
-                fireCamHot = false;
-                fireCamPauseDone = true;
-            }
-            fireCamStopRequested = true;        // Keep track if this is the first time we see this button release
-
-        } else if (gamepad2.right_trigger > 0.2) {
-            /**
-             * We have 3 conditions to account for when fire button is pressed
-             * 1>  We are already in "auto pause" mode -- restart the cam if pause is done
-             * 2>  Have not yet paused this revolution and we are in "auto pause" range
-             * 3>  Any other case -- rotate the firing cam
-             */
-
-            if (fireCamPaused) {
-                // Already started pause -- is pause done?
-                if (fireCamPauseTimer.milliseconds() >= FIRE_CAM_PAUSE_TIME) {
-                    // Restart the cam if needed since pause done
-                    startFireCam();
-                    DbgLog.msg("DM10337 -- Restarting fire cam after auto pause.");
-                    fireCamPaused = false;
-                    fireCamHot = true;
-                }
-
-            } else if (!fireCamPauseDone && fireCamHot &&
-                    (fireCamTimer.milliseconds() >= FIRE_CAM_PAUSE_MIN) &&
-                   (fireCamTimer.milliseconds() <= FIRE_CAM_MAX_TIME)) {
-                    // We are in the potential time window to insert a new auto pause
-                    stopFireCam();
-                    fireCamPauseDone = true;
-                    fireCamPaused = true;
-                    fireCamPauseTimer.reset();
-                    DbgLog.msg("DM10337 -- Starting fire cam auto pause.");
-            } else {
-                // Not auto paused
-                // So make sure we are running
-                startFireCam();
-                if (!fireCamHot) {
-                    // Wasn't already running so log it
-                    DbgLog.msg("DM10337 -- Starting firing cam.");
-                }
-                fireCamHot = true;
-                fireCamPaused = false;
-            }
-
-            fireCamStopRequested = false;
+        if (robot.camSwitch.isPressed() && !camPaused && !camSwitchPressed) {
+            camSwitchPressed = true;
+            camPaused = true;
+            pausedTime.reset();
         }
+
+        if (!robot.camSwitch.isPressed()) {
+            camSwitchPressed = false;
+        }
+
+
+        if (gamepad2.right_trigger < 0.25) {
+            camPaused = false;
+            camStopped = true;
+            pausedTime.reset();
+        }
+
+        if (camStopped && robot.camSwitch.isPressed()) {
+            robot.fire.setPower(0.0);
+            camSwitchPressed = true;
+            camPaused = false;
+            camReverse = true;
+        }
+
+        if (gamepad2.right_trigger < 0.25 && camReverse) {
+            robot.fire.setPower(-0.1);
+            camReverseTimer.reset();
+            camReverse = false;
+            camReverseStop = true;
+            REVERSE_TIME = 100;
+        }
+
+        if (gamepad2.right_trigger < 0.25 && camReverseStop && camReverseTimer.milliseconds() > REVERSE_TIME)
+        {
+            robot.fire.setPower(0.0);
+            camReverseStop = false;
+        }
+
+        if (camStopped && pausedTime.milliseconds() > 1500) {
+            robot.fire.setPower(0.0);
+            camSwitchPressed = true;
+            camPaused = false;
+            REVERSE_TIME = 250;
+        }
+
+
 
         /*
             Code to adjust the shooter flywheel speed
