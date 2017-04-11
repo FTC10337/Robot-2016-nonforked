@@ -54,10 +54,7 @@ public class AutoRedDefensePark extends AutoBlueDefensePark  {
      *
      * @return
      */
-    public boolean amIBlue() {
-
-        return false;
-    }
+    public boolean amIBlue() { return false;  }
     public boolean capBallPush() {
         return true;
     }
