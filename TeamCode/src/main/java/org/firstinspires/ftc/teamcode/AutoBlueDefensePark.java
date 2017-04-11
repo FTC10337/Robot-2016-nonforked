@@ -63,9 +63,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
  * -- Drive to center vortex, knock cap ball, and park.
  */
 
-@Autonomous(name="2. Auto Blue Shoot & Park", group="DM")
+@Autonomous(name="4. Auto Blue Def & Park", group="DM")
 // @Disabled
-public class AutoShootBlue extends LinearOpMode {
+public class AutoBlueDefensePark extends LinearOpMode {
 
     /* Declare OpMode members. */
     HardwareDM         robot   = new HardwareDM ();   // Use a Pushbot's hardware
@@ -172,10 +172,10 @@ public class AutoShootBlue extends LinearOpMode {
         // Turn towards the goal
         gyroTurn(TURN_SPEED, amIBlue()?-45.0:45.0);
 
-        waitForSwitch();
+        //waitForSwitch();
 
         // Drive to the goal
-        encoderDrive(DRIVE_SPEED, 32.0, 3.0, true, amIBlue()?-45.0:45.0, false);
+        encoderDrive(DRIVE_SPEED, 33.0, 3.0, true, amIBlue()?-45.0:45.0, false);
 
         // Fire the balls
         camDrive(1.0, 2, 50, 1500);
@@ -183,42 +183,69 @@ public class AutoShootBlue extends LinearOpMode {
         robot.lShoot.setPower(0.0);
         robot.rShoot.setPower(0.0);
 
-        waitForSwitch();
+
+        // Backup
+        encoderDrive(DRIVE_SPEED, -10.0, 3.0, true, amIBlue()?-45.0:45.0, false);
+        // Turn towards the goal
+
+        gyroTurn(TURN_SPEED, amIBlue()?0.0:0.0);
+
+        //waitForSwitch();
+
+        // Drive up to line
+        encoderDrive(DRIVE_SPEED_SLOW, 4.0, 3.0, true, amIBlue()?0:0, false);
+
+        //waitForSwitch();
 
         while (waitTime.milliseconds() < 10000) {
             idle();
         }
 
-        if (capBallPush()) {
-            // Reverse the intake to keep any particles or cap balls out of our way
-            robot.intake.setPower(-1.0);
 
-            // And drive to the center vortex, knock cap ball, and park
-            // Note that we are turning while moving to save time at the expense of accuracy
-            encoderDrive(DRIVE_SPEED, 16.0, 10.0, true,
-                    amIBlue()?-45.0:45.0, false);
+        //robot.intake.setPower(-1.0);
+        // Drive and push cap ball into beacon pathway
+        encoderDrive(1.0, 30.0, 10.0, true, amIBlue()?0:0, false);
+        encoderDrive(1.0, 53.5, 10.0, true, amIBlue()?-45:45, false);
 
+        robot.intake.setPower(0.0);
 
-        } else {
-            encoderDrive(DRIVE_SPEED, -28.0, 3.0, false, 0.0, false);
+        gyroTurn(TURN_SPEED, amIBlue()?0.0:0.0);
+        encoderDrive(DRIVE_SPEED, 10.0, 5.0, true, amIBlue()?0:0, false);
+
+        robot.setDriveZeroPower(DcMotor.ZeroPowerBehavior.BRAKE);
+        // Record where we are at and set it as motor target to hold
+
+        int lfBrakedPosn = robot.lfDrive.getCurrentPosition();
+        int lrBrakedPosn = robot.lrDrive.getCurrentPosition();
+        int rfBrakedPosn = robot.rfDrive.getCurrentPosition();
+        int rrBrakedPosn = robot.rrDrive.getCurrentPosition();
+        robot.lfDrive.setTargetPosition(lfBrakedPosn);
+        robot.lrDrive.setTargetPosition(lrBrakedPosn);
+        robot.rfDrive.setTargetPosition(rfBrakedPosn);
+        robot.rrDrive.setTargetPosition(rrBrakedPosn);
+        robot.setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
+        // Allow up to max power to hold our position
+        robot.lfDrive.setPower(1.0);
+        robot.rfDrive.setPower(1.0);
+        robot.rfDrive.setPower(1.0);
+        robot.rrDrive.setPower(1.0);
+
+        while (waitTime.milliseconds() < 25000) {
+            idle();
         }
 
+        robot.lfDrive.setPower(0.0);
+        robot.lrDrive.setPower(0.0);
+        robot.rfDrive.setPower(0.0);
+        robot.rrDrive.setPower(0.0);
+        robot.setDriveZeroPower(DcMotor.ZeroPowerBehavior.FLOAT);
+        robot.setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        // Stop the shooter
-        robot.fire.setPower(0.0);
-        robot.lShoot.setPower(0.0);
-        robot.rShoot.setPower(0.0);
-
-
-
-        // And stop
-        robot.intake.setPower(0.0);
+        if (capBallPush()) {
+            encoderDrive(DRIVE_SPEED, -50.0, 5.0, true, amIBlue() ? 5 : -5, false);
+        }
 
         DbgLog.msg("DM10337- Finished last move of auto");
-        sleep(10000);
-        robot.intake.setPower(0.0);
-
-
 
         //telemetry.addData("Path", "Complete");
         telemetry.update();

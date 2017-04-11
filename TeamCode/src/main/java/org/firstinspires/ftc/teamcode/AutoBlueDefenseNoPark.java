@@ -37,7 +37,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 
-@Autonomous(name="3. Auto Red Shoot NO Park", group="DM")
+@Autonomous(name="5. Auto Blue Def NO Park", group="DM")
 //@Disabled
 
 /*
@@ -45,7 +45,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
  */
 
-public class AutoShootNoParkRed extends AutoShootBlue  {
+public class AutoBlueDefenseNoPark extends AutoShootBlue  {
 
 
     /**
@@ -56,10 +56,9 @@ public class AutoShootNoParkRed extends AutoShootBlue  {
      */
     public boolean amIBlue() {
 
-        return false;
+        return true;
     }
-
-    public boolean capBallPush() {
+    public boolean capPark() {
         return false;
     }
 }

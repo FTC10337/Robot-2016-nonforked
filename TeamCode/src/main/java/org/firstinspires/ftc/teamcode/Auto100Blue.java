@@ -64,7 +64,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
  * -- Drive to center vortex, knock cap ball, and park.
  */
 
-@Autonomous(name="Auto Blue Full 100", group="DM")
+@Autonomous(name="1. Auto Blue 100", group="DM")
 // @Disabled
 public class Auto100Blue extends LinearOpMode {
 
@@ -190,8 +190,7 @@ public class Auto100Blue extends LinearOpMode {
         // Use gyro to hold heading
         encoderDrive(DRIVE_SPEED,  25.0, 5.0, true, 0.0, false);
 
-        // Fire the balls
-        camDrive(1.0, 2, 50, 1500);
+
 
         // Turn towards the beacons using gyro
         gyroTurn(TURN_SPEED, amIBlue()?-85.0:85.0, P_TURN_COEFF);
@@ -839,6 +838,7 @@ public class Auto100Blue extends LinearOpMode {
         return angles.firstAngle - headingBias;
     }
 
+    // Cam drive code
     public void camDrive (double speed, double shots, long pause, double timeout) throws InterruptedException {
          ElapsedTime     pauseTime = new ElapsedTime();
 

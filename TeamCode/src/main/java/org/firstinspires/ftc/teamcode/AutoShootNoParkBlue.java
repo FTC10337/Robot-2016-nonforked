@@ -37,7 +37,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 
-@Autonomous(name="Auto Blue Option 3", group="DM")
+@Autonomous(name="3. Auto Blue Shoot NO Park", group="DM")
 //@Disabled
 
 /*
@@ -45,16 +45,10 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
  */
 
-public class AutoShootNoParkBlue extends AutoShootBlue  {
+public class AutoShootNoParkBlue extends AutoBlueDefensePark  {
 
 
-    /**
-     * Always returns false to indicate this OpMode is Red -- Overrides the matching method in Blue code
-     * to change robot program to the red autonomous sequence.
-     *
-     * @return
-     */
-    public boolean amIBlue() {
+  public boolean amIBlue() {
 
         return true;
     }
