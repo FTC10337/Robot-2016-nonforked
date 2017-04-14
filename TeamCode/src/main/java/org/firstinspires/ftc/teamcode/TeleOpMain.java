@@ -90,6 +90,7 @@ public class TeleOpMain extends OpMode{
     boolean camIsPressedTrue = false;
 
     // Keep track of the status of the intake
+    boolean              intakeStop              = false;
     boolean              intakeIn                = false;    // intake running forward
     boolean              intakeOut               = false;    // intake running backward
     boolean              intakeInPressed         = false;    // Is intake button pressed
@@ -142,7 +143,9 @@ public class TeleOpMain extends OpMode{
     ElapsedTime pausedTime = new ElapsedTime();
     ElapsedTime camReverseTimer = new ElapsedTime();
 
-
+    int curPos = 0;
+    int remainder = 0;
+    int newPos = 0;
 
 
     /*
@@ -208,7 +211,9 @@ public class TeleOpMain extends OpMode{
         //telemetry.addData("difference: ", difference);
         //telemetry.addData("Shoot: ", shootSpeed);
         //telemetry.addData("Cam: ", fireCamHot);
-        telemetry.addData("Shots: ", shotsMade);
+        //telemetry.addData("Shots: ", shotsMade);
+        telemetry.addData("Current Pos: ", robot.intake.getCurrentPosition());
+        telemetry.addData("Run to Pos: ", newPos);
         updateTelemetry(telemetry);
 
 
@@ -576,6 +581,7 @@ public class TeleOpMain extends OpMode{
                 } else {
                     // Not already in forward so set it so
                     robot.intake.setPower(robot.INTAKE_IN_SPEED);
+                    intakeStop = false;
                     intakeTimerOn = false;
                     intakeOut = false;
                     intakeIn = true;
@@ -589,12 +595,25 @@ public class TeleOpMain extends OpMode{
             intakeInPressed = false;
         }
 
+        /*
+        if (intakeStop) {
+
+            curPos = robot.intake.getCurrentPosition();
+            remainder = curPos % 420;
+            newPos = curPos + (420 - remainder);
+            robot.intake.setTargetPosition(newPos);
+            robot.intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            intakeStop = false;
+        }
+        */
+
         if (gamepad1.a) {
             // Stop intake
             intakeIn = false;
             intakeOut = false;
             intakeTimerOn = false;
             intakeJammedTimerOn = false;
+            intakeStop = true;
             robot.intake.setPower(0.0);
             //DbgLog.msg("DM10337 intake stopped");
         }
