@@ -64,7 +64,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
  * -- Drive to center vortex, knock cap ball, and park.
  */
 
-@Autonomous(name="1. Auto Blue 100", group="DM")
+@Autonomous(name="1. Auto Blue 100", group="1.BEACONS")
 // @Disabled
 public class Auto100Blue extends LinearOpMode {
 
@@ -81,7 +81,7 @@ public class Auto100Blue extends LinearOpMode {
     static final double     HEADING_THRESHOLD       = 2 ;      // As tight as we can make it with an integer gyro
     static final double     P_TURN_COEFF            = 0.011;   // Larger is more responsive, but also less accurate
     static final double     P_TURN_COEFF2           = 0.025;
-    static final double     P_TURN_COEFF_RED        = 0.011;
+    static final double     P_TURN_COEFF_RED        = 0.0095;
     static final double     P_DRIVE_COEFF_1         = 0.03;  // Larger is more responsive, but also less accurate
     static final double     P_DRIVE_COEFF_2         = 0.02;
 
@@ -190,7 +190,8 @@ public class Auto100Blue extends LinearOpMode {
         // Use gyro to hold heading
         encoderDrive(DRIVE_SPEED,  25.0, 5.0, true, 0.0, false);
 
-
+        // Fire the balls
+        camDrive(1.0, 2, 50, 1500);
 
         // Turn towards the beacons using gyro
         gyroTurn(TURN_SPEED, amIBlue()?-85.0:85.0, P_TURN_COEFF);
@@ -250,7 +251,7 @@ public class Auto100Blue extends LinearOpMode {
         beacon = beaconColor();
         if (beacon == 1) {
             // We see blue
-            distCorrection = amIBlue()?1.2:-1.5;
+            distCorrection = amIBlue()?1.2:-1.75;
         } else if (beacon == -1) {
             // We see red
             distCorrection = amIBlue()?-1.45:1.0;
@@ -320,7 +321,7 @@ public class Auto100Blue extends LinearOpMode {
         beacon = beaconColor();
         if (beacon == 1) {
             // I see blue
-            distCorrection = amIBlue()?1.2:-1.5;
+            distCorrection = amIBlue()?1.2:-1.75;
         } else if (beacon == -1) {
             // I see red
             distCorrection = amIBlue()?-1.25:1.1;

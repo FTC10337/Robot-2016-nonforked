@@ -45,6 +45,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 
@@ -63,9 +64,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
  * -- Drive to center vortex, knock cap ball, and park.
  */
 
-@Autonomous(name="6. Auto Blue Def & Park", group="3.DEFENSE")
+@Autonomous(name="2. Auto Blue 100 Shoot Last & Park", group="1.BEACONS")
 // @Disabled
-public class AutoBlueDefensePark extends LinearOpMode {
+public class Auto100BlueShootLast extends LinearOpMode {
 
     /* Declare OpMode members. */
     HardwareDM         robot   = new HardwareDM ();   // Use a Pushbot's hardware
@@ -74,13 +75,21 @@ public class AutoBlueDefensePark extends LinearOpMode {
     // These constants define the desired driving/control characteristics
     // The can/should be tweaked to suite the specific robot drive train.
     static final double     DRIVE_SPEED             = 0.8;     // Nominal speed for auto moves.
-    static final double     DRIVE_SPEED_SLOW        = 0.5;     // Slower speed where required
-    static final double     TURN_SPEED              = 1.0;     // Turn speed
+    static final double     DRIVE_SPEED_SLOW        = 0.65;     // Slower speed where required
+    static final double     TURN_SPEED              = 0.8;     // Turn speed
 
     static final double     HEADING_THRESHOLD       = 2 ;      // As tight as we can make it with an integer gyro
-    static final double     P_TURN_COEFF            = 0.010;   // Larger is more responsive, but also less accurate
-    static final double     P_DRIVE_COEFF_1         = 0.05;  // Larger is more responsive, but also less accurate
-    static final double     P_DRIVE_COEFF_2         = 0.03;
+    static final double     P_TURN_COEFF            = 0.011;   // Larger is more responsive, but also less accurate
+    static final double     P_TURN_COEFF2           = 0.025;
+    static final double     P_TURN_COEFF_RED        = 0.0095;
+    static final double     P_DRIVE_COEFF_1         = 0.03;  // Larger is more responsive, but also less accurate
+    static final double     P_DRIVE_COEFF_2         = 0.02;
+
+    // Coeff for doing range sensor driving -- 1.25 degrees per CM off
+    static final double     P_DRIVE_COEFF_3         = 1.25;
+    static final double     RANGE_THRESHOLD         = 1.0;  // OK at +/- 1cm
+    static final double     WALL_DISTANCE_1           = 12.0; // 12 cm from wall for beacons
+    static final double     WALL_DISTANCE_2           = 11.0;
 
     // White line finder thresholds
     static final double     WHITE_THRESHOLD         = 2.0;      // Line finder
@@ -95,10 +104,10 @@ public class AutoBlueDefensePark extends LinearOpMode {
     // Variables used for reading Gyro
     Orientation             angles;
     double                  headingBias = 0.0;            // Gyro heading adjustment
-    ElapsedTime             waitTime = new ElapsedTime();
 
     // Keep track of how far we moved to line up to press beacons
     double distCorrection = 0.0;
+    double distCorrection_2 = 0.0;
 
 
     // Storage for reading adaFruit color sensor for beacon sensing
@@ -117,9 +126,9 @@ public class AutoBlueDefensePark extends LinearOpMode {
 
         int beacon = 0;         // What color beacon do we see
 
-        DbgLog.msg("DM10337- Starting Auto Defense.  We are:" + (amIBlue()?"Blue":"Red") + "We will" +(capBallPush()?" park":" not park"));
+        DbgLog.msg("DM10337- Starting Auto 100 init.  We are:" + (amIBlue()?"Blue":"Red"));
 
-        // Init the robot hardware
+        // Init the robot hardware -- including gyro and range finder
         robot.init(hardwareMap, true);
 
         // And turn on the LED on stripe finder
@@ -144,13 +153,25 @@ public class AutoBlueDefensePark extends LinearOpMode {
         telemetry.update();
 
         // Wait for the game to start (driver presses PLAY)
-        //waitForStart();
-        // Change off of waitForStart() as it appears to be causing delay at start
+
+        // Set a timer of how often to update gyro status telemetry
+        ElapsedTime updateGyroStatTimer = new ElapsedTime();
+        updateGyroStatTimer.reset();
         while (!isStarted()) {
+            if (updateGyroStatTimer.milliseconds() >= 500) {
+                // Update telemetry every 0.5 seconds
+                telemetry.addData("IMU calibrated: ", robot.adaGyro.isSystemCalibrated());
+                telemetry.addData("IMU Gyro calibrated:  ", robot.adaGyro.isGyroCalibrated());
+
+                // Do a gyro read to keep it "fresh"
+                telemetry.addData("Gyro heading: ", readGyro());
+                telemetry.update();
+
+                // And reset the timer
+                updateGyroStatTimer.reset();
+            }
             idle();
         }
-
-        waitTime.reset();
 
         DbgLog.msg("DM10337- Auto Pressed Start");
         // Step through each leg of the path,
@@ -161,23 +182,185 @@ public class AutoBlueDefensePark extends LinearOpMode {
         DbgLog.msg("DM10337 - Gyro bias set to " + headingBias);
 
 
+
+        // Drive towards the beacon wall
+        // Use gyro to hold heading
+        // Distance is the "inside" of the turn distance
+        encoderDrive(DRIVE_SPEED, amIBlue()?74.5:75.0, 5.0, true, amIBlue()?-25.0:25.0, false);
+
+
+
+
+         //waitForSwitch();
+
+        // Turn parallel to beacon wall using gyro
+        gyroTurn(TURN_SPEED, amIBlue()?0.0:180.0, amIBlue()?P_TURN_COEFF: P_TURN_COEFF_RED);
+
+
+
+        // Move slowly to approach 1st beacon -- Slow allows us to be more accurate w/ alignment
+        // Autocorrects any heading errors while driving
+        encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?-10.0:30.0, 5.0, true,
+                amIBlue()?0.0:180.0, false, true, amIBlue()?WALL_DISTANCE_1:WALL_DISTANCE_2);
+
+
+        //waitForSwitch();
+
+        // If heading is more than 5 degrees from target heading after wall follow, robot turns to correct heading
+        double headingThreshold = getError(amIBlue()?0:180);
+        if (headingThreshold > 2){
+            gyroTurn(TURN_SPEED, amIBlue()?0:180, P_TURN_COEFF2);
+            DbgLog.msg ("DM10337 - adjusted heading before find line1 by " + headingThreshold);
+        }
+
+        //waitForSwitch();
+
+        // Use line finder to align to white line
+        findLine(amIBlue()?-0.10:0.10, 5.0);
+
+        if (headingThreshold > 2){
+            gyroTurn(TURN_SPEED, amIBlue()?0:180, P_TURN_COEFF2);
+            DbgLog.msg ("DM10337 - adjusted heading after find line1 by " + headingThreshold);
+        }
+        //waitForSwitch();
+        // Wait for beacon color sensor
+        sleep(1000);
+
+        beacon = beaconColor();
+        if (beacon == 1) {
+            // We see blue
+            distCorrection = amIBlue()?1.2:-1.5;
+        } else if (beacon == -1) {
+            // We see red
+            distCorrection = amIBlue()?-1.45:1.0;
+        } else {
+            // We see neither
+            distCorrection = 0;
+        }
+
+        encoderDrive(0.2, distCorrection, 2.5, true,
+                amIBlue()?(0):(180), true);
+
+        if (beacon == 1) {
+            // We see blue
+            distCorrection_2 = amIBlue()?4.5:-4.5;
+        } else if (beacon == -1) {
+            // We see red
+            distCorrection_2 = amIBlue()?-4.5:4.5;
+        } else {
+            // We see neither
+            distCorrection_2 = 0;
+        }
+
+        if (beacon != 0) {
+            // We saw the beacon color so press the center of the beacon
+            robot.beacon.setPosition(robot.BEACON_MAX_RANGE);
+            //waitForSwitch();
+            encoderDrive(0.15, distCorrection_2, 2.5, true,
+                    amIBlue()?(0):(180), true);
+
+            // Return beacon arm back to home position
+            //waitForSwitch();
+            robot.beacon.setPosition((robot.BEACON_HOME));
+            sleep(100);
+
+        }
+
+        // Drive to the 2nd beacon.  Tweaked Red heading to correct alignment errors.
+        // Use rangefinder correction to get us to 10cm from all
+        encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?42.0 - distCorrection - distCorrection_2:-44.0 - distCorrection - distCorrection_2, 4.0,
+                true, amIBlue()?0.0:180.0, false, true, WALL_DISTANCE_1);
+
+        //waitForSwitch();
+
+        // If heading is more than 5 degrees from target heading after wall follow, robot turns to correct heading
+        headingThreshold = getError(amIBlue()?0:180);
+        if (headingThreshold > 2){
+            gyroTurn(TURN_SPEED, amIBlue()?0:180, P_TURN_COEFF2);
+            DbgLog.msg ("DM10337 - adjusted heading before find line2 by " + headingThreshold);
+
+        }
+
+        //waitForSwitch();
+
+        // Find the 2nd white line
+        findLine(amIBlue()?0.10:-0.10, 5.0);
+
+        if (headingThreshold > 2){
+            gyroTurn(TURN_SPEED, amIBlue()?0:180, P_TURN_COEFF2);
+            DbgLog.msg ("DM10337 - adjusted heading after find line2 by " + headingThreshold);
+        }
+        // wait for color sensor
+        sleep(1000);
+
+        //waitForSwitch();
+
+        // Check the beacon color
+        beacon = beaconColor();
+        if (beacon == 1) {
+            // I see blue
+            distCorrection = amIBlue()?1.2:-1.5;
+        } else if (beacon == -1) {
+            // I see red
+            distCorrection = amIBlue()?-1.25:1.1;
+        } else {
+            // I see neither
+            distCorrection = 0;
+        }
+
+        encoderDrive(0.2, distCorrection, 2.5, true,
+                amIBlue()?(0):(180), true);
+
+        if (beacon == 1) {
+            // I see blue
+            distCorrection_2 = amIBlue()?4.5:-4.5;
+        } else if (beacon == -1) {
+            // I see red
+            distCorrection_2 = amIBlue()?-4.5:4.5;
+        } else {
+            // I see neither
+            distCorrection_2 = 0;
+        }
+
+        if (beacon != 0) {
+            // We saw the beacon color so press the center of the beacon
+            robot.beacon.setPosition(robot.BEACON_MAX_RANGE);
+            //waitForSwitch();
+            encoderDrive(0.15, distCorrection_2, 2.5, true,
+                    amIBlue()?0:180, true);
+
+            // Return beacon arm back to home position
+            //waitForSwitch();
+            robot.beacon.setPosition((robot.BEACON_HOME));
+            sleep(100);
+        }
+
+
+        double angleAdjust = 0.0;
+        if (amIBlue() && distCorrection_2 > 0) {
+            // Need to adjust angle to keep from hitting center pole
+            angleAdjust = 15.0;
+        } else if (!amIBlue() && distCorrection_2 < 0) {
+            // Need to adjust angle to keep from hitting center pole
+            angleAdjust = -15.0;
+        }
+
+        // And drive to the center vortex, knock cap ball, and park
+        // Note that we are turning while moving to save time at the expense of accuracy
+        // Distances adjusted to "inside" of requested turn
+
+
+        encoderDrive(0.2, -distCorrection - distCorrection_2, 2.5, true,
+                amIBlue()?0:180, true);
+
         // Spin up the shooter
         robot.lShoot.setPower(robot.SHOOT_DEFAULT);
         robot.rShoot.setPower(robot.SHOOT_DEFAULT);
 
-        // Move forward  to line up for shooting particles
-        // Use gyro to hold heading
-        encoderDrive(DRIVE_SPEED,  7.0, 3.0, true, 0.0, false);
-        stopMotors();
+        encoderDrive(DRIVE_SPEED, amIBlue()?-45.0:35.0, 7.0, true, angleAdjust + (amIBlue()?-48:245), false);
 
-        // Turn towards the goal
-        gyroTurn(TURN_SPEED, amIBlue()?-45.0:45.0);
-
-        //waitForSwitch();
-
-        // Drive to the goal
-        encoderDrive(DRIVE_SPEED, 33.0, 3.0, true, amIBlue()?-45.0:45.0, false);
-        stopMotors();
+        //Turn toward center vortex to shoot
+        gyroTurn(TURN_SPEED, amIBlue()?125:245, amIBlue()?P_TURN_COEFF_RED : P_TURN_COEFF2);
 
         // Fire the balls
         camDrive(1.0, 2, 50, 1500);
@@ -185,79 +368,58 @@ public class AutoBlueDefensePark extends LinearOpMode {
         robot.lShoot.setPower(0.0);
         robot.rShoot.setPower(0.0);
 
-
-        // Backup
-        encoderDrive(DRIVE_SPEED, -10.0, 3.0, true, amIBlue()?-45.0:45.0, false);
-        stopMotors();
-
-        // Turn towards the goal
-        gyroTurn(TURN_SPEED, amIBlue()?0.0:0.0);
-
-        //waitForSwitch();
-
-        // Drive up to line
-        encoderDrive(DRIVE_SPEED_SLOW, 4.0, 3.0, true, amIBlue()?0:0, false);
-        stopMotors();
-
-        //waitForSwitch();
-
-        while (waitTime.milliseconds() < 10000) {
-            idle();
-        }
-
-
-        //robot.intake.setPower(-1.0);
-        // Drive and push cap ball into beacon pathway
-        encoderDrive(1.0, 30.0, 10.0, true, amIBlue()?0:0, false);
-        encoderDrive(1.0, 53.5, 10.0, true, amIBlue()?-45:45, false);
-        stopMotors();
-
-
-        gyroTurn(TURN_SPEED, amIBlue()?0.0:0.0);
-        encoderDrive(DRIVE_SPEED, 10.0, 5.0, true, amIBlue()?0:0, false);
-
-        robot.setDriveZeroPower(DcMotor.ZeroPowerBehavior.BRAKE);
-        // Record where we are at and set it as motor target to hold
-
-        int lfBrakedPosn = robot.lfDrive.getCurrentPosition();
-        int lrBrakedPosn = robot.lrDrive.getCurrentPosition();
-        int rfBrakedPosn = robot.rfDrive.getCurrentPosition();
-        int rrBrakedPosn = robot.rrDrive.getCurrentPosition();
-        robot.lfDrive.setTargetPosition(lfBrakedPosn);
-        robot.lrDrive.setTargetPosition(lrBrakedPosn);
-        robot.rfDrive.setTargetPosition(rfBrakedPosn);
-        robot.rrDrive.setTargetPosition(rrBrakedPosn);
-        robot.setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
-        // Allow up to max power to hold our position
-        robot.lfDrive.setPower(1.0);
-        robot.rfDrive.setPower(1.0);
-        robot.rfDrive.setPower(1.0);
-        robot.rrDrive.setPower(1.0);
-
-        while (waitTime.milliseconds() < 25000) {
-            idle();
-        }
-
-        robot.lfDrive.setPower(0.0);
-        robot.lrDrive.setPower(0.0);
-        robot.rfDrive.setPower(0.0);
-        robot.rrDrive.setPower(0.0);
-        robot.setDriveZeroPower(DcMotor.ZeroPowerBehavior.FLOAT);
-        robot.setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
         if (capBallPush()) {
-            encoderDrive(DRIVE_SPEED, -50.0, 5.0, true, amIBlue() ? 5 : -5, false);
+            encoderDrive(DRIVE_SPEED, 24.0, 5.0, true, amIBlue() ? 125 : 245, false);
         }
-
         DbgLog.msg("DM10337- Finished last move of auto");
 
-        //telemetry.addData("Path", "Complete");
+        telemetry.addData("Path", "Complete");
         telemetry.update();
     }
 
     /*
      *
      */
+
+
+    /**
+     * Abbreviated call to encoderDrive w/o range aggressive turning or finding adjustments
+     *
+     * @param speed
+     * @param distance
+     * @param timeout
+     * @param useGyro
+     * @param heading
+     * @throws InterruptedException
+     */
+    public void encoderDrive(double speed,
+                             double distance,
+                             double timeout,
+                             boolean useGyro,
+                             double heading) throws InterruptedException {
+        encoderDrive(speed, distance, timeout, useGyro, heading, false, false, 0.0);
+    }
+
+
+    /**
+     * Abbreviated call to encoderDrive w/o range finding adjustments
+     *
+     * @param speed
+     * @param distance
+     * @param timeout
+     * @param useGyro
+     * @param heading
+     * @param aggressive
+     * @throws InterruptedException
+     */
+    public void encoderDrive(double speed,
+                             double distance,
+                             double timeout,
+                             boolean useGyro,
+                             double heading,
+                             boolean aggressive) throws InterruptedException {
+        encoderDrive(speed, distance, timeout, useGyro, heading, aggressive, false, 0.0);
+    }
 
     /**
      *
@@ -280,13 +442,18 @@ public class AutoBlueDefensePark extends LinearOpMode {
                              double timeout,
                              boolean useGyro,
                              double heading,
-                             boolean aggressive) throws InterruptedException {
+                             boolean aggressive,
+                             boolean userange,
+                             double maintainRange) throws InterruptedException {
 
         // Calculated encoder targets
         int newLFTarget;
         int newRFTarget;
         int newLRTarget;
         int newRRTarget;
+
+        // The potentially adjusted current target heading
+        double curHeading = heading;
 
         // Speed ramp on start of move to avoid wheel slip
         final double MINSPEED = 0.30;           // Start at this power
@@ -298,13 +465,38 @@ public class AutoBlueDefensePark extends LinearOpMode {
 
             DbgLog.msg("DM10337- Starting encoderDrive speed:" + speed +
                     "  distance:" + distance + "  timeout:" + timeout +
-                    "  useGyro:" + useGyro + " heading:" + heading);
+                    "  useGyro:" + useGyro + " heading:" + heading + "  maintainRange: " + maintainRange);
+
+            // Calculate "adjusted" distance  for each side to account for requested turn during run
+            // Purpose of code is to have PIDs closer to finishing even on curved moves
+            // This prevents jerk to one side at stop
+            double leftDistance = distance;
+            double rightDistance = distance;
+            if (useGyro) {
+                // We are gyro steering -- are we requesting a turn while driving?
+                double headingChange = getError(curHeading) * Math.signum(distance);
+                if (Math.abs(headingChange) > 5.0) {
+                    //Heading change is significant enough to account for
+                    if (headingChange > 0.0) {
+                        // Assume 16 inch wheelbase
+                        // Add extra distance to the wheel on outside of turn
+                        rightDistance += Math.signum(distance) * 2 * 3.1415 * 16 * headingChange / 360.0;
+                        DbgLog.msg("DM10337 -- Turn adjusted R distance:" + rightDistance);
+                    } else {
+                        // Assume 16 inch wheelbase
+                        // Add extra distance from the wheel on inside of turn
+                        // headingChange is - so this is increasing the left distance
+                        leftDistance -= Math.signum(distance) * 2 * 3.1415 * 16 * headingChange / 360.0;
+                        DbgLog.msg("DM10337 -- Turn adjusted L distance:" + leftDistance);
+                    }
+                }
+            }
 
             // Determine new target encoder positions, and pass to motor controller
-            newLFTarget = robot.lfDrive.getCurrentPosition() + (int)(distance * robot.COUNTS_PER_INCH);
-            newLRTarget = robot.lrDrive.getCurrentPosition() + (int)(distance * robot.COUNTS_PER_INCH);
-            newRFTarget = robot.rfDrive.getCurrentPosition() + (int)(distance * robot.COUNTS_PER_INCH);
-            newRRTarget = robot.rrDrive.getCurrentPosition() + (int)(distance * robot.COUNTS_PER_INCH);
+            newLFTarget = robot.lfDrive.getCurrentPosition() + (int)(leftDistance * robot.COUNTS_PER_INCH);
+            newLRTarget = robot.lrDrive.getCurrentPosition() + (int)(leftDistance * robot.COUNTS_PER_INCH);
+            newRFTarget = robot.rfDrive.getCurrentPosition() + (int)(rightDistance * robot.COUNTS_PER_INCH);
+            newRRTarget = robot.rrDrive.getCurrentPosition() + (int)(rightDistance * robot.COUNTS_PER_INCH);
 
             while(robot.lfDrive.getTargetPosition() != newLFTarget){
                 robot.lfDrive.setTargetPosition(newLFTarget);
@@ -334,8 +526,8 @@ public class AutoBlueDefensePark extends LinearOpMode {
 
             // Set the motors to the starting power
             robot.lfDrive.setPower(Math.abs(curSpeed));
-            robot.lrDrive.setPower(Math.abs(curSpeed));
             robot.rfDrive.setPower(Math.abs(curSpeed));
+            robot.lrDrive.setPower(Math.abs(curSpeed));
             robot.rrDrive.setPower(Math.abs(curSpeed));
 
             // keep looping while we are still active, and there is time left, until at least 1 motor reaches target
@@ -355,8 +547,24 @@ public class AutoBlueDefensePark extends LinearOpMode {
 
                 // Doing gyro heading correction?
                 if (useGyro){
+
+                    // Get the difference in distance from wall to desired distance
+                    double errorRange = robot.rangeSensor.getDistance(DistanceUnit.CM) - maintainRange;
+
+                    if (userange) {
+                        if (Math.abs(errorRange) >= RANGE_THRESHOLD) {
+                            // We need to course correct to right distance from wall
+                            // Have to adjust sign based on heading forward or backward
+                            curHeading = heading - Math.signum(distance) * errorRange * P_DRIVE_COEFF_3;
+                            DbgLog.msg("DM10337 - Range adjust -- range:" + errorRange + "  heading: " + curHeading + "  actual heading: " + readGyro());
+                        } else {
+                            // We are in the right range zone so just use the desired heading w/ no adjustment
+                            curHeading = heading;
+                        }
+                    }
+
                     // adjust relative speed based on heading
-                    double error = getError(heading);
+                    double error = getError(curHeading);
                     double steer = getSteer(error,
                             (aggressive?P_DRIVE_COEFF_1:P_DRIVE_COEFF_2));
 
@@ -380,8 +588,8 @@ public class AutoBlueDefensePark extends LinearOpMode {
 
                 // And rewrite the motor speeds
                 robot.lfDrive.setPower(Math.abs(leftSpeed));
-                robot.lrDrive.setPower(Math.abs(leftSpeed));
                 robot.rfDrive.setPower(Math.abs(rightSpeed));
+                robot.lrDrive.setPower(Math.abs(leftSpeed));
                 robot.rrDrive.setPower(Math.abs(rightSpeed));
 
                 // Allow time for other processes to run.
@@ -396,20 +604,17 @@ public class AutoBlueDefensePark extends LinearOpMode {
                     "  rrtarget: " +newRRTarget + "  rractual:" + robot.rrDrive.getCurrentPosition() +
                     "  heading:" + readGyro());
 
+            // Stop all motion;
+            robot.lfDrive.setPower(0);
+            robot.rfDrive.setPower(0);
+            robot.lrDrive.setPower(0);
+            robot.rrDrive.setPower(0);
 
+            // Turn off RUN_TO_POSITION
+            robot.setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
     }
 
-    public void stopMotors (){
-        // Stop all motion;
-        robot.lfDrive.setPower(0);
-        robot.lrDrive.setPower(0);
-        robot.rfDrive.setPower(0);
-        robot.rrDrive.setPower(0);
-
-        // Turn off RUN_TO_POSITION
-        robot.setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    }
     /**
      * Method to find a white line
      *
@@ -423,9 +628,6 @@ public class AutoBlueDefensePark extends LinearOpMode {
         // loop and read the RGB data.
         // Note we use opModeIsActive() as our loop condition because it is an interruptible method.
 
-        // Use brake mode so we stop quicker at line
-        robot.setDriveZeroPower(DcMotor.ZeroPowerBehavior.BRAKE);
-
         runtime.reset();
         while (opModeIsActive() &&
                 robot.stripeColor.alpha() < WHITE_THRESHOLD &&
@@ -433,8 +635,8 @@ public class AutoBlueDefensePark extends LinearOpMode {
 
             // Drive til we see the stripe
             robot.lfDrive.setPower(speed);
-            robot.lrDrive.setPower(speed);
             robot.rfDrive.setPower(speed);
+            robot.lrDrive.setPower(speed);
             robot.rrDrive.setPower(speed);
             idle();
         }
@@ -442,10 +644,13 @@ public class AutoBlueDefensePark extends LinearOpMode {
         // Did we find the line?
         boolean finished = (runtime.seconds() < timeout);
 
+        // Use brake mode so we stop quicker at line
+        robot.setDriveZeroPower(DcMotor.ZeroPowerBehavior.BRAKE);
+
         // Stop moving
         robot.lfDrive.setPower(0.0);
-        robot.lrDrive.setPower(0.0);
         robot.rfDrive.setPower(0.0);
+        robot.lrDrive.setPower(0.0);
         robot.rrDrive.setPower(0.0);
 
         // And reset to float mode
@@ -465,13 +670,13 @@ public class AutoBlueDefensePark extends LinearOpMode {
      *                   0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
      *                   If a relative angle is required, add/subtract from current heading.
      */
-    public void gyroTurn (  double speed, double angle) {
+    public void gyroTurn (  double speed, double angle, double coefficient) {
 
         DbgLog.msg("DM10337- gyroTurn start  speed:" + speed +
             "  heading:" + angle);
 
         // keep looping while we are still active, and not on heading.
-        while (opModeIsActive() && !onHeading(speed, angle, P_TURN_COEFF)) {
+        while (opModeIsActive() && !onHeading(speed, angle, coefficient)) {
             // Allow time for other processes to run.
             // onHeading() does the work of turning us
             idle();
@@ -517,8 +722,8 @@ public class AutoBlueDefensePark extends LinearOpMode {
 
         // Send desired speeds to motors.
         robot.lfDrive.setPower(leftSpeed);
-        robot.lrDrive.setPower(leftSpeed);
         robot.rfDrive.setPower(rightSpeed);
+        robot.lrDrive.setPower(leftSpeed);
         robot.rrDrive.setPower(rightSpeed);
 
         return onTarget;
@@ -583,8 +788,8 @@ public class AutoBlueDefensePark extends LinearOpMode {
 
         // Check for red
         if (adaHSV[0] > RED_MIN && adaHSV[0] < RED_MAX) {
-            telemetry.addData("beacon", -1);
-            telemetry.update();
+            //telemetry.addData("beacon", -1);
+            //telemetry.update();
             DbgLog.msg("DM10337- Beacon color found red  alpha:" +
                     robot.beaconColor.alpha() +
                     "  hue:" + adaHSV[0] );
@@ -618,10 +823,9 @@ public class AutoBlueDefensePark extends LinearOpMode {
         return angles.firstAngle - headingBias;
     }
 
-
     // Cam drive code
     public void camDrive (double speed, double shots, long pause, double timeout) throws InterruptedException {
-        ElapsedTime     pauseTime = new ElapsedTime();
+         ElapsedTime     pauseTime = new ElapsedTime();
 
         runtime.reset();
 
@@ -653,13 +857,6 @@ public class AutoBlueDefensePark extends LinearOpMode {
         }
         robot.fire.setPower(0.0);
     }
-
-    public boolean waitForSwitch() {
-        while (!gamepad1.a) {
-            idle();
-        }
-        return true;
-    }
     /**
      * Always returns true as we are blue.
      *
@@ -672,5 +869,11 @@ public class AutoBlueDefensePark extends LinearOpMode {
     }
 
     public boolean capBallPush() { return true;}
-}
 
+    public boolean waitForSwitch() {
+        while (!gamepad1.a) {
+            idle();
+        }
+        return true;
+    }
+}

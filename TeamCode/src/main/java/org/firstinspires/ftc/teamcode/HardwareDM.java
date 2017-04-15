@@ -256,7 +256,7 @@ public class HardwareDM
         setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
         lShoot.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rShoot.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         liftMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // Set motor directions

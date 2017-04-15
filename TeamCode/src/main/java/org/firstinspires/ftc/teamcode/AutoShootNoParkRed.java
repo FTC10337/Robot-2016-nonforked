@@ -37,7 +37,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 
-@Autonomous(name="3. Auto Red Shoot NO Park", group="DM")
+@Autonomous(name="5. Auto Red Shoot NO Park", group="2.ALTERNATIVE")
 //@Disabled
 
 /*

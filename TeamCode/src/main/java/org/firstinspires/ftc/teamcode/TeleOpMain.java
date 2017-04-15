@@ -131,7 +131,7 @@ public class TeleOpMain extends OpMode{
     boolean              capBallDropped          = false;
     boolean              endGameDrive            = false;
 
-    double shotsMade = 0;
+    double               shotsMade               = 0;
 
     // New shooter status variables
     boolean camPaused = false;
@@ -211,15 +211,13 @@ public class TeleOpMain extends OpMode{
         //telemetry.addData("difference: ", difference);
         //telemetry.addData("Shoot: ", shootSpeed);
         //telemetry.addData("Cam: ", fireCamHot);
-        //telemetry.addData("Shots: ", shotsMade);
-        telemetry.addData("Current Pos: ", robot.intake.getCurrentPosition());
-        telemetry.addData("Run to Pos: ", newPos);
+        telemetry.addData("Shots: ", shotsMade);
         updateTelemetry(telemetry);
 
 
         if (robot.camSwitch.isPressed() && !camIsPressedTrue) {
                 shotsMade = shotsMade + 1.0;
-                DbgLog.msg("DM10337switch -- limit switch pressed! Shots: " + shotsMade);
+                DbgLog.msg("DM10334switch -- limit switch pressed! Shots: " + shotsMade);
                 camIsPressedTrue = true;
             }
         if (!robot.camSwitch.isPressed()) camIsPressedTrue = false;
@@ -554,13 +552,14 @@ public class TeleOpMain extends OpMode{
         /*
             Code for the ball intake
          */
-        if (gamepad1.left_trigger > 0.2) {
+        if (gamepad1.left_trigger > 0.6) {
             // Pressing intake reverse button
             if (!intakeOutPressed) {
                 // Haven't read this button press yet so process it
                 intakeOutPressed = true;
                 // Not already in reverse so set it so
                     robot.intake.setPower(robot.INTAKE_OUT_SPEED);
+                    intakeStop = false;
                     intakeTimerOn = false;
                     intakeOut = true;
                     intakeIn = false;
@@ -573,7 +572,7 @@ public class TeleOpMain extends OpMode{
             // Intake reverse button is not pressed
             intakeOutPressed = false;
         }
-        if (gamepad1.right_trigger > 0.2) {
+        if (gamepad1.right_trigger > 0.6) {
             // Pressing intake forward button
             if (!intakeInPressed) {
                 // Haven't read this button press yet so process it

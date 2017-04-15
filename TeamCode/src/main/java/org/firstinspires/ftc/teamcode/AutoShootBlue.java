@@ -63,7 +63,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
  * -- Drive to center vortex, knock cap ball, and park.
  */
 
-@Autonomous(name="2. Auto Blue Shoot & Park", group="DM")
+@Autonomous(name="4. Auto Blue Shoot & Park", group="2.ALTERNATIVE")
 // @Disabled
 public class AutoShootBlue extends LinearOpMode {
 

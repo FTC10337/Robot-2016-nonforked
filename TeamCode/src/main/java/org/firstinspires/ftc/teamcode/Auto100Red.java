@@ -38,7 +38,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 
-@Autonomous(name="1. Auto Red 100", group="DM")
+@Autonomous(name="1. Auto Red 100", group="1.BEACONS")
 //@Disabled
 
 /*
