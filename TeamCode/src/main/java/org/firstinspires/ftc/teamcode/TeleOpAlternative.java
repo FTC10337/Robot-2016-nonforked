@@ -41,8 +41,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-
 /**
  * This file provides  Telop driving for Dark Matter 2016-17 robot.
  *
@@ -52,10 +50,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  * All device access is managed through the HardwareDM class.
  *
  */
-@TeleOp(name="1. TeleOpMain", group="DM")
+@TeleOp(name="2. TeleOpAlternative", group="DM")
 // @Disabled
 
-public class TeleOpMain extends OpMode{
+public class TeleOpAlternative extends OpMode{
 
     /* Declare OpMode members. */
     HardwareDM robot       = new HardwareDM(); // use the class created to define a robot hardware
@@ -80,7 +78,10 @@ public class TeleOpMain extends OpMode{
     boolean camIsPressedTrue = false;
 
     // Keep track of the status of the intake
+    boolean              intakeReset             = false;
     boolean              intakeStop              = false;
+    boolean              intakeStopped           = false;
+    boolean              intakeStopInPos         = false;
     boolean              intakeIn                = false;    // intake running forward
     boolean              intakeOut               = false;    // intake running backward
     boolean              intakeInPressed         = false;    // Is intake button pressed
@@ -94,7 +95,9 @@ public class TeleOpMain extends OpMode{
     int                  previousIntakePos       = 0;
     int                  currentIntakePos        = 0;
     int                  difference              = 0;
-
+    double               intakeTargetPos         = 0;
+    double               intakeRotation          = 0;
+    double               INTAKE_CLICKS           = 746 + (2/3);
 
     /* Servo current positions */
     double               beaconPos               = robot.BEACON_HOME;
@@ -123,6 +126,7 @@ public class TeleOpMain extends OpMode{
 
     double               shotsMade               = 0;
 
+
     // New shooter status variables
     boolean camPaused = false;
     boolean camSwitchPressed = false;
@@ -132,7 +136,6 @@ public class TeleOpMain extends OpMode{
     public double REVERSE_TIME = 100;
     ElapsedTime pausedTime = new ElapsedTime();
     ElapsedTime camReverseTimer = new ElapsedTime();
-
 
 
 
@@ -200,6 +203,9 @@ public class TeleOpMain extends OpMode{
         //telemetry.addData("Shoot: ", shootSpeed);
         //telemetry.addData("Cam: ", fireCamHot);
         telemetry.addData("Shots: ", shotsMade);
+        telemetry.addData("Current Pos: ", robot.intake.getCurrentPosition());
+        telemetry.addData("Target Pos: ", (int)intakeTargetPos);
+        telemetry.addData("Rotations: ", (int)intakeRotation);
         updateTelemetry(telemetry);
 
 
@@ -534,6 +540,7 @@ public class TeleOpMain extends OpMode{
 
             if (gamepad1.dpad_down && capBallDropped) endGameDrive = true;
 
+
         }
 
 
@@ -548,6 +555,7 @@ public class TeleOpMain extends OpMode{
                 // Not already in reverse so set it so
                     robot.intake.setPower(robot.INTAKE_OUT_SPEED);
                     intakeStop = false;
+                    intakeStopped = false;
                     intakeTimerOn = false;
                     intakeOut = true;
                     intakeIn = false;
@@ -569,6 +577,7 @@ public class TeleOpMain extends OpMode{
                     // Not already in forward so set it so
                     robot.intake.setPower(robot.INTAKE_IN_SPEED);
                     intakeStop = false;
+                    intakeStopped = false;
                     intakeTimerOn = false;
                     intakeOut = false;
                     intakeIn = true;
@@ -582,27 +591,64 @@ public class TeleOpMain extends OpMode{
             intakeInPressed = false;
         }
 
-        /*
-        if (intakeStop) {
-
-            curPos = robot.intake.getCurrentPosition();
-            remainder = curPos % 420;
-            newPos = curPos + (420 - remainder);
-            robot.intake.setTargetPosition(newPos);
+        // Adds driver control to reset intake position and intake encoders to 0
+        if ((gamepad1.dpad_left || gamepad2.dpad_left) && !intakeReset && !intakeIn && !intakeOut) {
+            intakeReset = true;
+            currentIntakePos = robot.intake.getCurrentPosition();
+            intakeTargetPos = (74 + currentIntakePos);
+            robot.intake.setTargetPosition((int)Math.round(intakeTargetPos));
             robot.intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            intakeStop = false;
+            robot.intake.setPower(1.0);
+            // reset intake timer - used to determine
+            intakeTimer.reset();
+        } else if (intakeReset && intakeTimer.milliseconds() > 200) {
+            robot.intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            robot.intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            robot.intake.setPower(0.0);
+            intakeReset = false;
         }
-        */
 
-        if (gamepad1.a) {
-            // Stop intake
+        // Initiate stop intake
+        if (gamepad1.a && !intakeStopped) {
             intakeIn = false;
             intakeOut = false;
             intakeTimerOn = false;
             intakeJammedTimerOn = false;
-            intakeStop = true;
-            robot.intake.setPower(0.0);
+            intakeStopInPos = true;
             //DbgLog.msg("DM10337 intake stopped");
+        }
+
+        // If intake has been initiated by driver to stop, then stop intake in vertical orientation using encoders
+        if (intakeStopInPos) {
+            intakeStopInPos = false;
+            intakeStopped = true;
+            currentIntakePos = robot.intake.getCurrentPosition();
+            intakeTargetPos = (INTAKE_CLICKS  - (currentIntakePos % INTAKE_CLICKS)) + currentIntakePos;
+            intakeRotation = intakeTargetPos / INTAKE_CLICKS;
+            DbgLog.msg("Stopping intake at rotation #" + Math.round(intakeRotation));
+            robot.intake.setTargetPosition((int)Math.round(intakeTargetPos));
+            robot.intake.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            robot.intake.setPower(1.0);
+            // reset intake timer - used to determine
+            intakeTimer.reset();
+        }
+        // intake has attempted to stop using encoders. If intake motor is not busy, then target must have been reached.
+        else if (intakeStopped && !robot.intake.isBusy()) {
+            //set intake run mode back to using encoder and set power to 0
+            if (robot.intake.getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
+                DbgLog.msg("Intake stopped at rotation #" + Math.round(intakeRotation) + "in" + intakeTimer.milliseconds() +" milliseconds. Setting intake to RUN_USING_ENCODER");
+                robot.intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                robot.intake.setPower(0.0);
+            }
+        }
+        // intake has attempted to stop, but is still busy trying to run to target position after 1.5 seconds. Something is stopping intake from reaching target position, so stop intake. We don't want to burn out motors.
+        else if (intakeStopped && robot.intake.isBusy() && intakeTimer.milliseconds() > 1500) {
+            //set intake run mode back to using encoder and set power to 0
+            if (robot.intake.getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
+                DbgLog.msg("Intake was unable to run to position" + Math.round(intakeTargetPos) + ". Setting intake to RUN_USING_ENCODER");
+                robot.intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                robot.intake.setPower(0.0);
+            }
         }
 
         // Turn intake timer on at the start of intaking
