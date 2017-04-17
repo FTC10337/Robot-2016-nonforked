@@ -553,6 +553,7 @@ public class TeleOpAlternative extends OpMode{
                 // Haven't read this button press yet so process it
                 intakeOutPressed = true;
                 // Not already in reverse so set it so
+                    robot.intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     robot.intake.setPower(robot.INTAKE_OUT_SPEED);
                     intakeStop = false;
                     intakeStopped = false;
@@ -575,6 +576,7 @@ public class TeleOpAlternative extends OpMode{
                 intakeInPressed = true;
                 } else {
                     // Not already in forward so set it so
+                    robot.intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     robot.intake.setPower(robot.INTAKE_IN_SPEED);
                     intakeStop = false;
                     intakeStopped = false;
@@ -591,8 +593,26 @@ public class TeleOpAlternative extends OpMode{
             intakeInPressed = false;
         }
 
+        // All stop and reset variables on intake
+        if (gamepad1.dpad_up) {
+             intakeReset             = false;
+             intakeStop              = false;
+             intakeStopped           = false;
+             intakeStopInPos         = false;
+             intakeIn                = false;
+             intakeOut               = false;
+             intakeInPressed         = false;
+             intakeOutPressed        = false;
+             intakeTimerOn           = false;
+             intakeJammedTimerOn     = false;
+             intakePausedTimerOn     = false;
+
+            robot.intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            robot.intake.setPower(0.0);
+        }
+
         // Adds driver control to reset intake position and intake encoders to 0
-        if ((gamepad1.dpad_left || gamepad2.dpad_left) && !intakeReset && !intakeIn && !intakeOut) {
+        if ((gamepad1.dpad_left || gamepad2.x) && !intakeReset && !intakeIn && !intakeOut) {
             intakeReset = true;
             currentIntakePos = robot.intake.getCurrentPosition();
             intakeTargetPos = (74 + currentIntakePos);

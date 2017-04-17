@@ -45,7 +45,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
  */
 
-public class AutoShootNoParkBlue extends AutoBlueDefensePark  {
+public class AutoShootNoParkBlue extends AutoShootBlue  {
 
 
   public boolean amIBlue() {

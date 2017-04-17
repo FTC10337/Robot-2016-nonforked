@@ -81,7 +81,7 @@ public class Auto100BlueShootLast extends LinearOpMode {
     static final double     HEADING_THRESHOLD       = 2 ;      // As tight as we can make it with an integer gyro
     static final double     P_TURN_COEFF            = 0.011;   // Larger is more responsive, but also less accurate
     static final double     P_TURN_COEFF2           = 0.025;
-    static final double     P_TURN_COEFF_RED        = 0.0095;
+    static final double     P_TURN_COEFF_RED        = 0.0085;
     static final double     P_DRIVE_COEFF_1         = 0.03;  // Larger is more responsive, but also less accurate
     static final double     P_DRIVE_COEFF_2         = 0.02;
 
@@ -179,6 +179,9 @@ public class Auto100BlueShootLast extends LinearOpMode {
         // Make sure the gyro is zeroed
         zeroGyro();
 
+
+
+
         DbgLog.msg("DM10337 - Gyro bias set to " + headingBias);
 
 
@@ -186,7 +189,7 @@ public class Auto100BlueShootLast extends LinearOpMode {
         // Drive towards the beacon wall
         // Use gyro to hold heading
         // Distance is the "inside" of the turn distance
-        encoderDrive(DRIVE_SPEED, amIBlue()?74.5:75.0, 5.0, true, amIBlue()?-25.0:25.0, false);
+        encoderDrive(DRIVE_SPEED, amIBlue()?75.5:75.0, 5.0, true, amIBlue()?-25.0:25.0, false);
 
 
 
@@ -229,10 +232,10 @@ public class Auto100BlueShootLast extends LinearOpMode {
         beacon = beaconColor();
         if (beacon == 1) {
             // We see blue
-            distCorrection = amIBlue()?1.2:-1.5;
+            distCorrection = amIBlue()?1.2:-2.15;
         } else if (beacon == -1) {
             // We see red
-            distCorrection = amIBlue()?-1.45:1.0;
+            distCorrection = amIBlue()?-1.85:1.1;
         } else {
             // We see neither
             distCorrection = 0;
@@ -299,10 +302,10 @@ public class Auto100BlueShootLast extends LinearOpMode {
         beacon = beaconColor();
         if (beacon == 1) {
             // I see blue
-            distCorrection = amIBlue()?1.2:-1.5;
+            distCorrection = amIBlue()?1.2:-2.25;
         } else if (beacon == -1) {
             // I see red
-            distCorrection = amIBlue()?-1.25:1.1;
+            distCorrection = amIBlue()?-1.85:1.1;
         } else {
             // I see neither
             distCorrection = 0;
@@ -336,41 +339,40 @@ public class Auto100BlueShootLast extends LinearOpMode {
         }
 
 
-        double angleAdjust = 0.0;
-        if (amIBlue() && distCorrection_2 > 0) {
-            // Need to adjust angle to keep from hitting center pole
-            angleAdjust = 15.0;
-        } else if (!amIBlue() && distCorrection_2 < 0) {
-            // Need to adjust angle to keep from hitting center pole
-            angleAdjust = -15.0;
+        double LINE_FOLLOW_DIRECTION = 0.0;
+        if (distCorrection_2 > 0) {
+            LINE_FOLLOW_DIRECTION = -1.0;
+        } else if (distCorrection_2 < 0) {
+            LINE_FOLLOW_DIRECTION = 1.0;
         }
 
-        // And drive to the center vortex, knock cap ball, and park
-        // Note that we are turning while moving to save time at the expense of accuracy
-        // Distances adjusted to "inside" of requested turn
+        findLine(LINE_FOLLOW_DIRECTION * 0.20, 5.0);
 
-
-        encoderDrive(0.2, -distCorrection - distCorrection_2, 2.5, true,
-                amIBlue()?0:180, true);
 
         // Spin up the shooter
         robot.lShoot.setPower(robot.SHOOT_DEFAULT);
         robot.rShoot.setPower(robot.SHOOT_DEFAULT);
 
-        encoderDrive(DRIVE_SPEED, amIBlue()?-45.0:35.0, 7.0, true, angleAdjust + (amIBlue()?-48:245), false);
+        encoderDrive(DRIVE_SPEED, amIBlue()?-43.0:34.0, 7.0, true, amIBlue()?-48:243, false);
 
         //Turn toward center vortex to shoot
-        gyroTurn(TURN_SPEED, amIBlue()?125:245, amIBlue()?P_TURN_COEFF_RED : P_TURN_COEFF2);
+        gyroTurn(TURN_SPEED, amIBlue()?140:243, amIBlue()?P_TURN_COEFF_RED : P_TURN_COEFF2);
 
         // Fire the balls
-        camDrive(1.0, 2, 50, 1500);
+        camDrive(1.0, 3, 50, 1500);
 
         robot.lShoot.setPower(0.0);
         robot.rShoot.setPower(0.0);
 
         if (capBallPush()) {
-            encoderDrive(DRIVE_SPEED, 24.0, 5.0, true, amIBlue() ? 125 : 245, false);
-        }
+            if(!amIBlue()) robot.intake.setPower(-1.0);
+            encoderDrive(DRIVE_SPEED, 24.0, 5.0, true, amIBlue() ? 145:243, false);
+            robot.intake.setPower(0.0);
+        } else
+            {
+            encoderDrive(DRIVE_SPEED, -24, 5.0, true, amIBlue() ? 145:243, false);
+            }
+
         DbgLog.msg("DM10337- Finished last move of auto");
 
         telemetry.addData("Path", "Complete");
@@ -825,7 +827,8 @@ public class Auto100BlueShootLast extends LinearOpMode {
 
     // Cam drive code
     public void camDrive (double speed, double shots, long pause, double timeout) throws InterruptedException {
-         ElapsedTime     pauseTime = new ElapsedTime();
+
+        ElapsedTime     pauseTime = new ElapsedTime();
 
         runtime.reset();
 
@@ -834,7 +837,7 @@ public class Auto100BlueShootLast extends LinearOpMode {
         boolean camSwitchPressed = false;
         boolean paused = false;
 
-        while (opModeIsActive() && totalShots < shots&& runtime.milliseconds() < timeout) {
+        while (opModeIsActive() && totalShots < shots && runtime.milliseconds() < timeout) {
             // run cam until limit switch is pressed
             if (!paused && robot.camSwitch.isPressed() && !camSwitchPressed && runtime.milliseconds() > 250) {
                 totalShots += 1.0;
@@ -842,19 +845,18 @@ public class Auto100BlueShootLast extends LinearOpMode {
                 robot.fire.setPower(0.0);
                 pauseTime.reset();
                 paused = true;
-                robot.fire.setPower(0.0);
-                telemetry.addData("Shots made: ", totalShots);
-                telemetry.update();
+
             } else if (paused && pauseTime.milliseconds() > pause) {
                 paused = false;
                 robot.fire.setPower(speed);
-
+                pauseTime.reset();
             }
-            if (!robot.camSwitch.isPressed() && pauseTime.milliseconds() > pause + 100){
+            if (!robot.camSwitch.isPressed() && pauseTime.milliseconds() > 150){
                 camSwitchPressed = false;
             }
             idle();
         }
+        DbgLog.msg("DM10337 -- Auto shot: " + totalShots);
         robot.fire.setPower(0.0);
     }
     /**

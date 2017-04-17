@@ -191,7 +191,7 @@ public class Auto100Blue extends LinearOpMode {
         encoderDrive(DRIVE_SPEED,  25.0, 5.0, true, 0.0, false);
 
         // Fire the balls
-        camDrive(1.0, 2, 50, 1500);
+        camDrive(1.0, 3, 50, 1500);
 
         // Turn towards the beacons using gyro
         gyroTurn(TURN_SPEED, amIBlue()?-85.0:85.0, P_TURN_COEFF);
@@ -218,11 +218,17 @@ public class Auto100Blue extends LinearOpMode {
         // Turn parallel to beacon wall using gyro
         gyroTurn(TURN_SPEED, amIBlue()?0.0:180.0, amIBlue()?P_TURN_COEFF: P_TURN_COEFF_RED);
 
+        if (!amIBlue()) {
+            double headingThreshold = getError(180);
+            if (headingThreshold > 2){
+                gyroTurn(TURN_SPEED, 180, P_TURN_COEFF2);
+            }
+        }
         //waitForSwitch();
 
         // Move slowly to approach 1st beacon -- Slow allows us to be more accurate w/ alignment
         // Autocorrects any heading errors while driving
-        encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?-15.0:35, 5.0, true,
+        encoderDrive(DRIVE_SPEED_SLOW, amIBlue()?-14.0:35, 5.0, true,
                 amIBlue()?0.0:180.0, false, true, amIBlue()?WALL_DISTANCE_1:WALL_DISTANCE_2);
 
 
@@ -251,10 +257,10 @@ public class Auto100Blue extends LinearOpMode {
         beacon = beaconColor();
         if (beacon == 1) {
             // We see blue
-            distCorrection = amIBlue()?1.2:-1.75;
+            distCorrection = amIBlue()?1.2:-2.15;
         } else if (beacon == -1) {
             // We see red
-            distCorrection = amIBlue()?-1.45:1.0;
+            distCorrection = amIBlue()?-1.85:1.1;
         } else {
             // We see neither
             distCorrection = 0;
@@ -321,10 +327,10 @@ public class Auto100Blue extends LinearOpMode {
         beacon = beaconColor();
         if (beacon == 1) {
             // I see blue
-            distCorrection = amIBlue()?1.2:-1.75;
+            distCorrection = amIBlue()?1.2:-2.25;
         } else if (beacon == -1) {
             // I see red
-            distCorrection = amIBlue()?-1.25:1.1;
+            distCorrection = amIBlue()?-1.85:1.1;
         } else {
             // I see neither
             distCorrection = 0;
@@ -841,7 +847,8 @@ public class Auto100Blue extends LinearOpMode {
 
     // Cam drive code
     public void camDrive (double speed, double shots, long pause, double timeout) throws InterruptedException {
-         ElapsedTime     pauseTime = new ElapsedTime();
+
+        ElapsedTime     pauseTime = new ElapsedTime();
 
         runtime.reset();
 
@@ -850,7 +857,7 @@ public class Auto100Blue extends LinearOpMode {
         boolean camSwitchPressed = false;
         boolean paused = false;
 
-        while (opModeIsActive() && totalShots < shots&& runtime.milliseconds() < timeout) {
+        while (opModeIsActive() && totalShots < shots && runtime.milliseconds() < timeout) {
             // run cam until limit switch is pressed
             if (!paused && robot.camSwitch.isPressed() && !camSwitchPressed && runtime.milliseconds() > 250) {
                 totalShots += 1.0;
@@ -858,19 +865,18 @@ public class Auto100Blue extends LinearOpMode {
                 robot.fire.setPower(0.0);
                 pauseTime.reset();
                 paused = true;
-                robot.fire.setPower(0.0);
-                telemetry.addData("Shots made: ", totalShots);
-                telemetry.update();
+
             } else if (paused && pauseTime.milliseconds() > pause) {
                 paused = false;
                 robot.fire.setPower(speed);
-
+                pauseTime.reset();
             }
-            if (!robot.camSwitch.isPressed() && pauseTime.milliseconds() > pause + 100){
+            if (!robot.camSwitch.isPressed() && pauseTime.milliseconds() > 150){
                 camSwitchPressed = false;
             }
             idle();
         }
+        DbgLog.msg("DM10337 -- Auto shot: " + totalShots);
         robot.fire.setPower(0.0);
     }
     /**

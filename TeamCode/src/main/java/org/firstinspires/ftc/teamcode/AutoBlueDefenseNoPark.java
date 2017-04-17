@@ -45,7 +45,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
  */
 
-public class AutoBlueDefenseNoPark extends AutoShootBlue  {
+public class AutoBlueDefenseNoPark extends AutoBlueDefensePark  {
 
 
     /**
@@ -58,7 +58,7 @@ public class AutoBlueDefenseNoPark extends AutoShootBlue  {
 
         return true;
     }
-    public boolean capPark() {
+    public boolean capBallPush() {
         return false;
     }
 }

@@ -172,20 +172,16 @@ public class AutoShootBlue extends LinearOpMode {
         // Turn towards the goal
         gyroTurn(TURN_SPEED, amIBlue()?-45.0:45.0);
 
-        waitForSwitch();
-
         // Drive to the goal
-        encoderDrive(DRIVE_SPEED, 32.0, 3.0, true, amIBlue()?-45.0:45.0, false);
+        encoderDrive(DRIVE_SPEED_SLOW, 33.0, 3.0, true, amIBlue()?-45.0:45.0, false);
 
         // Fire the balls
-        camDrive(1.0, 2, 50, 1500);
+        camDrive(1.0, 3, 50, 1500);
 
         robot.lShoot.setPower(0.0);
         robot.rShoot.setPower(0.0);
 
-        waitForSwitch();
-
-        while (waitTime.milliseconds() < 10000) {
+        while (waitTime.milliseconds() < 27000) {
             idle();
         }
 
@@ -587,6 +583,7 @@ public class AutoShootBlue extends LinearOpMode {
 
     // Cam drive code
     public void camDrive (double speed, double shots, long pause, double timeout) throws InterruptedException {
+
         ElapsedTime     pauseTime = new ElapsedTime();
 
         runtime.reset();
@@ -596,7 +593,7 @@ public class AutoShootBlue extends LinearOpMode {
         boolean camSwitchPressed = false;
         boolean paused = false;
 
-        while (opModeIsActive() && totalShots < shots&& runtime.milliseconds() < timeout) {
+        while (opModeIsActive() && totalShots < shots && runtime.milliseconds() < timeout) {
             // run cam until limit switch is pressed
             if (!paused && robot.camSwitch.isPressed() && !camSwitchPressed && runtime.milliseconds() > 250) {
                 totalShots += 1.0;
@@ -604,19 +601,18 @@ public class AutoShootBlue extends LinearOpMode {
                 robot.fire.setPower(0.0);
                 pauseTime.reset();
                 paused = true;
-                robot.fire.setPower(0.0);
-                telemetry.addData("Shots made: ", totalShots);
-                telemetry.update();
+
             } else if (paused && pauseTime.milliseconds() > pause) {
                 paused = false;
                 robot.fire.setPower(speed);
-
+                pauseTime.reset();
             }
-            if (!robot.camSwitch.isPressed() && pauseTime.milliseconds() > pause + 100){
+            if (!robot.camSwitch.isPressed() && pauseTime.milliseconds() > 150){
                 camSwitchPressed = false;
             }
             idle();
         }
+        DbgLog.msg("DM10337 -- Auto shot: " + totalShots);
         robot.fire.setPower(0.0);
     }
 

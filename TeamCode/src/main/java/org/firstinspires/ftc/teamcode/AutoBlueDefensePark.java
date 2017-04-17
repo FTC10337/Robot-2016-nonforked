@@ -176,15 +176,14 @@ public class AutoBlueDefensePark extends LinearOpMode {
         //waitForSwitch();
 
         // Drive to the goal
-        encoderDrive(DRIVE_SPEED, 33.0, 3.0, true, amIBlue()?-45.0:45.0, false);
+        encoderDrive(DRIVE_SPEED_SLOW, 33.0, 3.0, true, amIBlue()?-45.0:45.0, false);
         stopMotors();
 
         // Fire the balls
-        camDrive(1.0, 2, 50, 1500);
+        camDrive(1.0, 3, 50, 1500);
 
         robot.lShoot.setPower(0.0);
         robot.rShoot.setPower(0.0);
-
 
         // Backup
         encoderDrive(DRIVE_SPEED, -10.0, 3.0, true, amIBlue()?-45.0:45.0, false);
@@ -193,13 +192,9 @@ public class AutoBlueDefensePark extends LinearOpMode {
         // Turn towards the goal
         gyroTurn(TURN_SPEED, amIBlue()?0.0:0.0);
 
-        //waitForSwitch();
-
         // Drive up to line
         encoderDrive(DRIVE_SPEED_SLOW, 4.0, 3.0, true, amIBlue()?0:0, false);
         stopMotors();
-
-        //waitForSwitch();
 
         while (waitTime.milliseconds() < 10000) {
             idle();
@@ -209,12 +204,12 @@ public class AutoBlueDefensePark extends LinearOpMode {
         //robot.intake.setPower(-1.0);
         // Drive and push cap ball into beacon pathway
         encoderDrive(1.0, 30.0, 10.0, true, amIBlue()?0:0, false);
-        encoderDrive(1.0, 53.5, 10.0, true, amIBlue()?-45:45, false);
+        encoderDrive(1.0, 55.0, 10.0, true, amIBlue()?-45:45, false);
         stopMotors();
 
 
         gyroTurn(TURN_SPEED, amIBlue()?0.0:0.0);
-        encoderDrive(DRIVE_SPEED, 10.0, 5.0, true, amIBlue()?0:0, false);
+        encoderDrive(1.0, 14.0, 2.5, true, amIBlue()?0:0, false);
 
         robot.setDriveZeroPower(DcMotor.ZeroPowerBehavior.BRAKE);
         // Record where we are at and set it as motor target to hold
@@ -234,19 +229,19 @@ public class AutoBlueDefensePark extends LinearOpMode {
         robot.rfDrive.setPower(1.0);
         robot.rrDrive.setPower(1.0);
 
-        while (waitTime.milliseconds() < 25000) {
-            idle();
-        }
 
-        robot.lfDrive.setPower(0.0);
-        robot.lrDrive.setPower(0.0);
-        robot.rfDrive.setPower(0.0);
-        robot.rrDrive.setPower(0.0);
-        robot.setDriveZeroPower(DcMotor.ZeroPowerBehavior.FLOAT);
-        robot.setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            while (waitTime.milliseconds() < 25000) { idle(); }
+
+            robot.lfDrive.setPower(0.0);
+            robot.lrDrive.setPower(0.0);
+            robot.rfDrive.setPower(0.0);
+            robot.rrDrive.setPower(0.0);
+            robot.setDriveZeroPower(DcMotor.ZeroPowerBehavior.FLOAT);
+            robot.setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         if (capBallPush()) {
-            encoderDrive(DRIVE_SPEED, -50.0, 5.0, true, amIBlue() ? 5 : -5, false);
+            encoderDrive(DRIVE_SPEED, -54.0, 5.0, true, amIBlue() ? 5 : -5, false);
         }
 
         DbgLog.msg("DM10337- Finished last move of auto");
